@@ -75,10 +75,7 @@
     /* Employee List */
     .emp-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f7; cursor: pointer; gap: 10px; }
     .emp-row:last-child { border-bottom: none; }
-    .emp-info { flex: 1; }
-    .emp-name { font-size: 15px; font-weight: 500; }
-    .emp-rate { font-size: 12px; color: #8e8e93; margin-top: 2px; }
-    .emp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .emp-name { font-size: 15px; font-weight: 500; flex: 1; }
     .emp-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; flex-shrink: 0; }
     .badge-정직원 { background: #e1f0ff; color: #007aff; }
     .badge-일용직 { background: #fff3e0; color: #ff9500; }
@@ -765,14 +762,9 @@ function renderEmployeeList() {
       const rateText = emp.rate ? `${Number(emp.rate).toLocaleString()}${rateUnit}` : '';
 
       row.innerHTML = `
-        <div class="emp-info">
-          <div class="emp-name">${emp.name}</div>
-          ${rateText ? `<div class="emp-rate">${rateText}</div>` : ''}
-        </div>
-        <div class="emp-right">
-          <span class="emp-badge badge-${emp.status}">${emp.status}</span>
-          ${emp.phone ? `<a class="emp-phone" href="tel:${emp.phone}" onclick="event.stopPropagation()">${emp.phone}</a>` : ''}
-        </div>
+        <div class="emp-name">${emp.name}</div>
+        <span class="emp-badge badge-${emp.status}">${emp.status}</span>
+        ${emp.phone ? `<a class="emp-phone" href="tel:${emp.phone}" onclick="event.stopPropagation()">${emp.phone}</a>` : ''}
       `;
       card.appendChild(row);
     });
