@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>시래기밥상 출근대장</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif; background: #f2f2f7; color: #1c1c1e; min-height: 100vh; padding-bottom: 80px; }
+
+    /* Header */
+    .header { background: #fff; padding: 10px 16px; border-bottom: 1px solid #e5e5ea; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 17px; font-weight: 700; }
+    .export-icon-btn { background: none; border: none; color: #007aff; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .export-icon-btn:active { background: #e1f0ff; }
+
+    /* Tab Bar */
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5e5ea; display: flex; z-index: 200; padding-bottom: env(safe-area-inset-bottom); }
+    .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; cursor: pointer; color: #8e8e93; font-size: 10px; gap: 3px; }
+    .tab-item.active { color: #007aff; }
+    .tab-item svg { width: 24px; height: 24px; }
+
+    /* Pages */
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+
+    /* Cards */
+    .card { background: #fff; border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card-title { font-size: 13px; color: #8e8e93; font-weight: 500; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+    /* Calendar */
+    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .calendar-header .month-label { font-size: 15px; font-weight: 600; }
+    .calendar-nav { background: none; border: none; font-size: 20px; color: #007aff; cursor: pointer; padding: 2px 8px; }
+    .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 2px; }
+    .calendar-weekdays span { font-size: 10px; color: #8e8e93; font-weight: 500; padding: 2px 0; }
+    .calendar-weekdays span:first-child { color: #ff3b30; }
+    .calendar-weekdays span:last-child { color: #007aff; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+    .cal-day { height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; font-size: 13px; position: relative; transition: background 0.15s; }
+    .cal-day:empty { pointer-events: none; }
+    .cal-day.today { background: #007aff; color: #fff; font-weight: 700; }
+    .cal-day.selected { background: #e1f0ff; color: #007aff; font-weight: 600; }
+    .cal-day.today.selected { background: #007aff; color: #fff; }
+    .cal-day.sunday { color: #ff3b30; }
+    .cal-day.saturday { color: #007aff; }
+    .cal-day.today.sunday, .cal-day.today.saturday { color: #fff; }
+    .cal-day .alert-dot { position: absolute; bottom: 2px; width: 4px; height: 4px; background: #ff3b30; border-radius: 50%; }
+
+    /* Attendance List */
+    .date-label { font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
+    .att-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f2f2f7; gap: 8px; }
+    .att-row:last-child { border-bottom: none; }
+    .att-name { font-size: 14px; font-weight: 500; width: 52px; flex-shrink: 0; cursor: pointer; color: #007aff; }
+    .att-buttons { display: flex; gap: 5px; flex: 1; }
+    .att-btn { padding: 5px 10px; border-radius: 7px; border: 1.5px solid #e5e5ea; background: #fff; font-size: 12px; font-weight: 500; cursor: pointer; color: #1c1c1e; transition: all 0.15s; white-space: nowrap; }
+    .att-btn.active-출근 { background: #007aff; border-color: #007aff; color: #fff; }
+    .att-btn.active-유휴 { background: #34c759; border-color: #34c759; color: #fff; }
+    .att-btn.active-무휴 { background: #ff9500; border-color: #ff9500; color: #fff; }
+    .att-btn.active-미출근 { background: #ff3b30; border-color: #ff3b30; color: #fff; }
+    .att-note { font-size: 11px; color: #8e8e93; min-width: 28px; cursor: pointer; text-align: right; }
+    .att-time-info { font-size: 11px; color: #8e8e93; }
+
+    /* Daily work info for 일용직 */
+    .att-work-detail { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .att-work-detail span { font-size: 11px; color: #636366; background: #f2f2f7; padding: 2px 6px; border-radius: 5px; }
+
+    /* Employee List */
+    .emp-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f7; cursor: pointer; gap: 10px; }
+    .emp-row:last-child { border-bottom: none; }
+    .emp-name { font-size: 15px; font-weight: 500; flex: 1; }
+    .emp-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .badge-정직원 { background: #e1f0ff; color: #007aff; }
+    .badge-일용직 { background: #fff3e0; color: #ff9500; }
+    .badge-재직 { background: #e8f8ed; color: #34c759; }
+    .badge-퇴사 { background: #ffe5e5; color: #ff3b30; }
+    .emp-phone { font-size: 13px; color: #8e8e93; }
+
+    /* Add Button */
+    .add-btn { width: 100%; padding: 14px; background: #007aff; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .add-btn:active { background: #0062cc; }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 500; align-items: flex-end; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+    .modal-handle { width: 36px; height: 4px; background: #d1d1d6; border-radius: 2px; margin: 0 auto 16px; }
+    .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .modal-btn.primary { background: #007aff; color: #fff; }
+    .modal-btn.secondary { background: #f2f2f7; color: #1c1c1e; }
+    .modal-btn.danger { background: #ff3b30; color: #fff; }
+
+    /* Form */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 13px; color: #8e8e93; margin-bottom: 6px; font-weight: 500; }
+    .form-input { width: 100%; padding: 12px; border: 1.5px solid #e5e5ea; border-radius: 10px; font-size: 15px; outline: none; background: #fafafa; }
+    .form-input:focus { border-color: #007aff; background: #fff; }
+    .form-select { width: 100%; padding: 12px; border: 1.5px solid #e5e5ea; border-radius: 10px; font-size: 15px; background: #fafafa; outline: none; appearance: none; }
+    .form-select:focus { border-color: #007aff; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+
+    /* Payroll */
+    .payroll-emp-row { padding: 14px 0; border-bottom: 1px solid #f2f2f7; }
+    .payroll-emp-row:last-child { border-bottom: none; }
+    .payroll-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .payroll-detail { font-size: 13px; color: #636366; }
+    .payroll-amount { font-size: 16px; font-weight: 700; color: #007aff; margin-top: 4px; }
+    .payroll-total { padding: 16px; background: #007aff; border-radius: 12px; color: #fff; text-align: center; margin-top: 12px; }
+    .payroll-total .label { font-size: 13px; opacity: 0.85; }
+    .payroll-total .amount { font-size: 26px; font-weight: 700; margin-top: 4px; }
+
+    /* Month selector */
+    .month-selector { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+    .month-selector .month-text { font-size: 17px; font-weight: 600; }
+    .month-selector button { background: none; border: none; font-size: 22px; color: #007aff; cursor: pointer; padding: 4px 10px; }
+
+    /* Alert dot in list */
+    .missing-badge { background: #ff3b30; color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 8px; margin-left: 4px; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: #8e8e93; }
+    .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+
+    /* Confirm Dialog */
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 600; align-items: center; justify-content: center; padding: 20px; }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box { background: #fff; border-radius: 14px; padding: 20px; width: 100%; max-width: 320px; text-align: center; }
+    .confirm-box .title { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .confirm-box .msg { font-size: 14px; color: #636366; margin-bottom: 20px; }
+    .confirm-actions { display: flex; gap: 10px; }
+    .confirm-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .confirm-btn.primary { background: #007aff; color: #fff; }
+    .confirm-btn.secondary { background: #f2f2f7; color: #1c1c1e; }
+    .confirm-btn.danger { background: #ff3b30; color: #fff; }
+
+    /* Export Modal type selector */
+    .export-type-group { display: flex; gap: 8px; margin-top: 4px; }
+    .export-type-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid #e5e5ea; background: #fff; font-size: 14px; font-weight: 500; cursor: pointer; color: #8e8e93; transition: all 0.15s; }
+    .export-type-btn.active { border-color: #007aff; background: #e1f0ff; color: #007aff; font-weight: 600; }
+
+    /* Delete area in edit modal */
+    .delete-area { margin-top: 16px; }
+    .delete-text-btn { width: 100%; padding: 13px; background: #fff0f0; border: 1.5px solid #ffcdd2; border-radius: 12px; color: #ff3b30; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .delete-text-btn:active { background: #ffe5e5; }
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 14px; color: #8e8e93; }
+    .info-value { font-size: 14px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1 id="headerTitle">시래기밥상 출근부</h1>
+  <button class="export-icon-btn" onclick="openExportModal()" title="CSV 내보내기">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+  </button>
+</div>
+
+<!-- Pages -->
+<!-- ==================== 출근부 / 일용직 공유 페이지 ==================== -->
+<div class="page active" id="page-attendance">
+  <div class="card">
+    <div class="calendar-header">
+      <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="calMonthLabel"></div>
+      <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="calendar-weekdays">
+      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+  </div>
+
+  <div class="date-label" id="selectedDateLabel"></div>
+  <div class="card" id="attListCard">
+    <div id="attList"></div>
+  </div>
+</div>
+
+<!-- ==================== 직원관리 페이지 ==================== -->
+<div class="page" id="page-employees">
+  <div id="empList"></div>
+  <button class="add-btn" onclick="openAddEmployee()">+ 직원 추가</button>
+</div>
+
+<!-- ==================== 하단 탭바 ==================== -->
+<div class="tab-bar">
+  <div class="tab-item active" id="tab-regular" onclick="switchPage('regular')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+    출근부
+  </div>
+  <div class="tab-item" id="tab-daily" onclick="switchPage('daily')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+    일용직
+  </div>
+  <div class="tab-item" id="tab-employees" onclick="switchPage('employees')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    직원관리
+  </div>
+</div>
+
+<!-- ==================== 내보내기 모달 ==================== -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">내보내기</div>
+    <div class="form-group">
+      <div class="form-label">기간 선택</div>
+      <div style="display:flex; gap:8px;">
+        <select class="form-select" id="exportYearSelect" onchange="exportYear=+this.value"></select>
+        <select class="form-select" id="exportMonthSelect" onchange="exportMonth=+this.value"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">대상</div>
+      <div class="export-type-group">
+        <button class="export-type-btn active" id="expType-all"      onclick="setExportType('all')">전체</button>
+        <button class="export-type-btn"        id="expType-regular"  onclick="setExportType('regular')">정직원</button>
+        <button class="export-type-btn"        id="expType-daily"    onclick="setExportType('daily')">일용직</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('exportModal')">취소</button>
+      <button class="modal-btn primary" onclick="runExport()">내보내기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 직원정보 모달 ==================== -->
+<div class="modal-overlay" id="empInfoModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="empInfoTitle"></div>
+    <div id="empInfoContent"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('empInfoModal')">닫기</button>
+      <button class="modal-btn primary" onclick="editEmployeeFromInfo()">수정</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 비고 입력 모달 ==================== -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="noteModalTitle"></div>
+    <div class="form-group">
+      <div class="form-label">비고</div>
+      <input class="form-input" id="noteInput" placeholder="비고 내용 입력">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('noteModal')">취소</button>
+      <button class="modal-btn primary" onclick="saveNote()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 일용직 출근 입력 모달 ==================== -->
+<div class="modal-overlay" id="dailyAttModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="dailyAttTitle"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">출근시간</div>
+        <input class="form-input" id="dailyStartTime" type="time" value="09:00">
+      </div>
+      <div class="form-group">
+        <div class="form-label">근무시간 (h)</div>
+        <input class="form-input" id="dailyWorkHours" type="number" min="1" max="24" placeholder="8">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">비고</div>
+      <input class="form-input" id="dailyNote" placeholder="선택사항">
+    </div>
+    <div class="modal-actions" id="dailyAttActions"></div>
+  </div>
+</div>
+
+<!-- ==================== 직원 추가/수정 모달 ==================== -->
+<div class="modal-overlay" id="empEditModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="empEditTitle">직원 추가</div>
+    <input type="hidden" id="empEditId">
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">이름 *</div>
+        <input class="form-input" id="empEditName" placeholder="이름">
+      </div>
+      <div class="form-group">
+        <div class="form-label">상태</div>
+        <select class="form-select" id="empEditStatus">
+          <option value="재직">재직</option>
+          <option value="퇴사">퇴사</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">직급 *</div>
+        <select class="form-select" id="empEditType">
+          <option value="정직원">정직원</option>
+          <option value="일용직">일용직</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label" id="empEditRateLabel">일급 (원)</div>
+        <input class="form-input" id="empEditRate" placeholder="130000" type="number">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">전화번호</div>
+      <input class="form-input" id="empEditPhone" placeholder="010-0000-0000" type="tel">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">계좌번호</div>
+        <input class="form-input" id="empEditAccount" placeholder="000-000-000000">
+      </div>
+      <div class="form-group">
+        <div class="form-label">은행</div>
+        <input class="form-input" id="empEditBank" placeholder="신한">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">입사일</div>
+        <input class="form-input" id="empEditJoinDate" type="date">
+      </div>
+      <div class="form-group">
+        <div class="form-label">퇴사일</div>
+        <input class="form-input" id="empEditLeaveDate" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">비고</div>
+      <input class="form-input" id="empEditNote" placeholder="선택사항">
+    </div>
+    <div class="modal-actions" id="empEditActions"></div>
+    <div id="empDeleteArea"></div>
+  </div>
+</div>
+
+<!-- ==================== 확인 다이얼로그 ==================== -->
+<div class="confirm-overlay" id="confirmDialog">
+  <div class="confirm-box">
+    <div class="title" id="confirmTitle"></div>
+    <div class="msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="confirm-btn secondary" onclick="closeConfirm()">취소</button>
+      <button class="confirm-btn primary" id="confirmOkBtn" onclick="">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== DB Layer (localStorage) =====================
+const DB = {
+  getEmployees() {
+    return JSON.parse(localStorage.getItem('employees') || '[]');
+  },
+  saveEmployees(list) {
+    localStorage.setItem('employees', JSON.stringify(list));
+  },
+  getAttendance() {
+    return JSON.parse(localStorage.getItem('attendance') || '{}');
+  },
+  saveAttendance(data) {
+    localStorage.setItem('attendance', JSON.stringify(data));
+  },
+  getSettings() {
+    return JSON.parse(localStorage.getItem('settings') || '{"storeName":"시래기밥상"}');
+  },
+  saveSettings(s) {
+    localStorage.setItem('settings', JSON.stringify(s));
+  },
+  // attendance key: "YYYY-MM-DD"
+  // attendance[date] = { empId: { status, note, startTime, workHours } }
+  getDateRecord(dateStr) {
+    const att = this.getAttendance();
+    return att[dateStr] || {};
+  },
+  setEmpRecord(dateStr, empId, record) {
+    const att = this.getAttendance();
+    if (!att[dateStr]) att[dateStr] = {};
+    att[dateStr][empId] = record;
+    this.saveAttendance(att);
+  },
+  deleteEmpRecord(dateStr, empId) {
+    const att = this.getAttendance();
+    if (att[dateStr]) {
+      delete att[dateStr][empId];
+      this.saveAttendance(att);
+    }
+  }
+};
+
+// ===================== State =====================
+let currentPage = 'attendance';
+let currentAttType = 'regular'; // 'regular' | 'daily'
+let calYear, calMonth; // 0-indexed month
+let selectedDate = null;
+let payrollYear, payrollMonth;
+let pendingNoteEmpId = null;
+let pendingDailyEmpId = null;
+let pendingDailyIsEdit = false;
+let pendingConfirmFn = null;
+let currentEmpInfoId = null;
+
+// ===================== Init =====================
+function init() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  payrollYear = now.getFullYear();
+  payrollMonth = now.getMonth();
+  selectedDate = formatDate(now);
+  currentAttType = 'regular';
+
+  const settings = DB.getSettings();
+  document.getElementById('headerTitle').textContent = PAGE_TITLES['regular'];
+
+  renderCalendar();
+  renderAttList();
+  renderEmployeeList();
+}
+
+function formatDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDateKo(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
+}
+function isToday(dateStr) {
+  return dateStr === formatDate(new Date());
+}
+function isFuture(dateStr) {
+  return dateStr > formatDate(new Date());
+}
+
+// ===================== Page Switch =====================
+const PAGE_TITLES = {
+  regular:   '출근부 (정직원)',
+  daily:     '출근부 (일용직)',
+  employees: '직원관리',
+};
+
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+
+  if (page === 'regular' || page === 'daily') {
+    document.getElementById('page-attendance').classList.add('active');
+    currentAttType = page;
+    renderCalendar();
+    renderAttList();
+  } else {
+    document.getElementById('page-' + page).classList.add('active');
+    if (page === 'employees') renderEmployeeList();
+  }
+
+  document.getElementById('tab-' + page).classList.add('active');
+  document.getElementById('headerTitle').textContent = PAGE_TITLES[page] || '';
+  currentPage = page;
+}
+
+// ===================== Calendar =====================
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+  renderAttList();
+}
+
+function renderCalendar() {
+  const label = `${calYear}년 ${calMonth+1}월`;
+  document.getElementById('calMonthLabel').textContent = label;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const today = formatDate(new Date());
+
+  // Get missing days for active employees
+  const missingDays = getMissingDays();
+
+  // Empty cells
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day';
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    el.textContent = d;
+
+    const dow = new Date(calYear, calMonth, d).getDay();
+    if (dow === 0) el.classList.add('sunday');
+    if (dow === 6) el.classList.add('saturday');
+    if (dateStr === today) el.classList.add('today');
+    if (dateStr === selectedDate) el.classList.add('selected');
+
+    // Missing input alert (past days only)
+    if (missingDays.has(dateStr)) {
+      const dot = document.createElement('div');
+      dot.className = 'alert-dot';
+      el.appendChild(dot);
+    }
+
+    el.onclick = () => selectDate(dateStr);
+    grid.appendChild(el);
+  }
+}
+
+function getMissingDays() {
+  const missing = new Set();
+  const today = formatDate(new Date());
+  const att = DB.getAttendance();
+  const employees = DB.getEmployees().filter(e => e.status === '재직');
+
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (dateStr >= today) continue; // only past days
+
+    const dayRec = att[dateStr] || {};
+    const type = currentAttType === 'regular' ? '정직원' : '일용직';
+    const empsOfType = employees.filter(e => e.type === type);
+    const hasAnyMissing = empsOfType.some(e => !dayRec[e.id]);
+    if (hasAnyMissing) missing.add(dateStr);
+  }
+  return missing;
+}
+
+function selectDate(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+  renderAttList();
+}
+
+function renderAttList() {
+  if (!selectedDate) return;
+  document.getElementById('selectedDateLabel').textContent = formatDateKo(selectedDate) + (isToday(selectedDate) ? ' (오늘)' : '');
+
+  const employees = DB.getEmployees().filter(e => {
+    const typeMatch = currentAttType === 'regular' ? e.type === '정직원' : e.type === '일용직';
+    return typeMatch && e.status === '재직';
+  });
+
+  const container = document.getElementById('attList');
+  container.innerHTML = '';
+
+  if (employees.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><div>직원이 없습니다.<br>직원관리에서 추가해주세요.</div></div>';
+    return;
+  }
+
+  const dayRec = DB.getDateRecord(selectedDate);
+
+  employees.forEach(emp => {
+    const rec = dayRec[emp.id] || {};
+    const row = document.createElement('div');
+    row.className = 'att-row';
+
+    // Name
+    const nameEl = document.createElement('div');
+    nameEl.className = 'att-name';
+    nameEl.textContent = emp.name;
+    nameEl.onclick = () => showEmployeeInfo(emp.id);
+    row.appendChild(nameEl);
+
+    if (currentAttType === 'regular') {
+      renderRegularRow(row, emp, rec);
+    } else {
+      renderDailyRow(row, emp, rec);
+    }
+
+    container.appendChild(row);
+  });
+}
+
+function renderRegularRow(row, emp, rec) {
+  const btnGroup = document.createElement('div');
+  btnGroup.className = 'att-buttons';
+
+  ['출근','유휴','무휴'].forEach(status => {
+    const btn = document.createElement('button');
+    btn.className = 'att-btn';
+    btn.textContent = status;
+    if (rec.status === status) btn.classList.add('active-' + status);
+    btn.onclick = () => setRegularStatus(emp.id, status, rec);
+    btnGroup.appendChild(btn);
+  });
+  row.appendChild(btnGroup);
+
+  const noteEl = document.createElement('div');
+  noteEl.className = 'att-note';
+  noteEl.textContent = rec.note || '비고';
+  noteEl.style.color = rec.note ? '#1c1c1e' : '#c7c7cc';
+  noteEl.onclick = () => openNoteModal(emp.id, rec.note || '');
+  row.appendChild(noteEl);
+}
+
+function renderDailyRow(row, emp, rec) {
+  const btnGroup = document.createElement('div');
+  btnGroup.className = 'att-buttons';
+
+  if (rec.status === '출근') {
+    const btn = document.createElement('button');
+    btn.className = 'att-btn active-출근';
+    btn.textContent = '출근';
+    btn.onclick = () => openDailyModal(emp.id, true);
+    btnGroup.appendChild(btn);
+
+    const info = document.createElement('div');
+    info.className = 'att-work-detail';
+    if (rec.startTime) {
+      const t = document.createElement('span');
+      t.textContent = rec.startTime;
+      info.appendChild(t);
+    }
+    if (rec.workHours) {
+      const h = document.createElement('span');
+      h.textContent = rec.workHours + 'h';
+      info.appendChild(h);
+    }
+    if (rec.note) {
+      const n = document.createElement('span');
+      n.textContent = rec.note;
+      info.appendChild(n);
+    }
+    btnGroup.appendChild(info);
+  } else {
+    const btn = document.createElement('button');
+    btn.className = 'att-btn';
+    btn.textContent = '출근';
+    btn.onclick = () => openDailyModal(emp.id, false);
+    btnGroup.appendChild(btn);
+
+    if (!isFuture(selectedDate)) {
+      const absentEl = document.createElement('div');
+      absentEl.className = 'att-time-info';
+      absentEl.textContent = rec.status === '미출근' ? '미출근' : '';
+      absentEl.style.color = '#ff3b30';
+      btnGroup.appendChild(absentEl);
+    }
+  }
+
+  row.appendChild(btnGroup);
+}
+
+function setRegularStatus(empId, newStatus, currentRec) {
+  if (currentRec.status === newStatus) {
+    // Already set — confirm change
+    showConfirm('출근 상태 변경', `${newStatus} 상태를 해제하시겠나요?`, () => {
+      DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: '' });
+      renderAttList();
+      renderCalendar();
+    });
+    return;
+  }
+  if (currentRec.status) {
+    showConfirm('출근 상태 변경', `${currentRec.status} → ${newStatus}로 변경하시겠나요?`, () => {
+      DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: newStatus });
+      renderAttList();
+      renderCalendar();
+    });
+  } else {
+    DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: newStatus });
+    renderAttList();
+    renderCalendar();
+  }
+}
+
+// ===================== Note Modal =====================
+function openNoteModal(empId, currentNote) {
+  pendingNoteEmpId = empId;
+  const emp = DB.getEmployees().find(e => e.id === empId);
+  document.getElementById('noteModalTitle').textContent = emp.name + '님 비고 입력';
+  document.getElementById('noteInput').value = currentNote;
+  openModal('noteModal');
+}
+
+function saveNote() {
+  const note = document.getElementById('noteInput').value.trim();
+  const att = DB.getAttendance();
+  if (!att[selectedDate]) att[selectedDate] = {};
+  if (!att[selectedDate][pendingNoteEmpId]) att[selectedDate][pendingNoteEmpId] = {};
+  att[selectedDate][pendingNoteEmpId].note = note;
+  DB.saveAttendance(att);
+  closeModal('noteModal');
+  renderAttList();
+}
+
+// ===================== Daily Attendance Modal =====================
+function openDailyModal(empId, isEdit) {
+  pendingDailyEmpId = empId;
+  pendingDailyIsEdit = isEdit;
+  const emp = DB.getEmployees().find(e => e.id === empId);
+  document.getElementById('dailyAttTitle').textContent = emp.name + '님 ' + (isEdit ? '출근 편집' : '출근 입력');
+
+  const rec = DB.getDateRecord(selectedDate)[empId] || {};
+  document.getElementById('dailyStartTime').value = rec.startTime || '09:00';
+  document.getElementById('dailyWorkHours').value = rec.workHours || '';
+  document.getElementById('dailyNote').value = rec.note || '';
+
+  const actions = document.getElementById('dailyAttActions');
+  actions.innerHTML = '';
+  if (isEdit) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'modal-btn danger';
+    delBtn.textContent = '미출근으로 변경';
+    delBtn.onclick = () => {
+      DB.setEmpRecord(selectedDate, empId, { status: '미출근' });
+      closeModal('dailyAttModal');
+      renderAttList();
+      renderCalendar();
+    };
+    actions.appendChild(delBtn);
+  }
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'modal-btn secondary';
+  cancelBtn.textContent = '취소';
+  cancelBtn.onclick = () => closeModal('dailyAttModal');
+  actions.appendChild(cancelBtn);
+
+  const okBtn = document.createElement('button');
+  okBtn.className = 'modal-btn primary';
+  okBtn.textContent = '확인';
+  okBtn.onclick = saveDailyAtt;
+  actions.appendChild(okBtn);
+
+  openModal('dailyAttModal');
+}
+
+function saveDailyAtt() {
+  const startTime = document.getElementById('dailyStartTime').value;
+  const workHours = document.getElementById('dailyWorkHours').value;
+  const note = document.getElementById('dailyNote').value.trim();
+  DB.setEmpRecord(selectedDate, pendingDailyEmpId, { status: '출근', startTime, workHours: workHours ? Number(workHours) : null, note });
+  closeModal('dailyAttModal');
+  renderAttList();
+  renderCalendar();
+}
+
+// ===================== Employee Info Modal =====================
+function showEmployeeInfo(empId) {
+  currentEmpInfoId = empId;
+  const emp = DB.getEmployees().find(e => e.id === empId);
+  document.getElementById('empInfoTitle').textContent = emp.name + '님 정보';
+  const content = document.getElementById('empInfoContent');
+  const fields = [
+    ['직급', emp.type],
+    ['상태', emp.status],
+    ['전화', emp.phone || '-'],
+    ['계좌', emp.account ? `${emp.account} (${emp.bank || ''})` : '-'],
+    [emp.type === '정직원' ? '일급' : '시급', emp.rate ? Number(emp.rate).toLocaleString() + '원' : '-'],
+    ['입사일', emp.joinDate || '-'],
+    ['퇴사일', emp.leaveDate || '-'],
+    ['비고', emp.note || '-'],
+  ];
+  content.innerHTML = fields.map(([l, v]) =>
+    `<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`
+  ).join('');
+  openModal('empInfoModal');
+}
+
+function editEmployeeFromInfo() {
+  closeModal('empInfoModal');
+  openEditEmployee(currentEmpInfoId);
+}
+
+// ===================== Employee CRUD =====================
+function renderEmployeeList() {
+  const employees = DB.getEmployees();
+  const container = document.getElementById('empList');
+  container.innerHTML = '';
+
+  if (employees.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><div>등록된 직원이 없습니다.</div></div>';
+    return;
+  }
+
+  [{ label: '정직원', type: '정직원' }, { label: '일용직', type: '일용직' }].forEach(({ label, type }) => {
+    const group = employees.filter(e => e.type === type);
+    if (group.length === 0) return;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const title = document.createElement('div');
+    title.className = 'card-title';
+    title.textContent = label;
+    card.appendChild(title);
+
+    group.forEach(emp => {
+      const row = document.createElement('div');
+      row.className = 'emp-row';
+      row.onclick = () => openEditEmployee(emp.id);
+      row.innerHTML = `
+        <div class="emp-name">${emp.name}</div>
+        <span class="emp-badge badge-${emp.status}">${emp.status}</span>
+        <div class="emp-phone">${emp.phone || ''}</div>
+      `;
+      card.appendChild(row);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+function openAddEmployee() {
+  const today = formatDate(new Date());
+  document.getElementById('empEditTitle').textContent = '직원 추가';
+  document.getElementById('empEditId').value = '';
+  document.getElementById('empEditName').value = '';
+  document.getElementById('empEditType').value = '정직원';
+  document.getElementById('empEditStatus').value = '재직';
+  document.getElementById('empEditPhone').value = '';
+  document.getElementById('empEditAccount').value = '';
+  document.getElementById('empEditBank').value = '';
+  document.getElementById('empEditRate').value = '130000';
+  document.getElementById('empEditJoinDate').value = today;
+  document.getElementById('empEditLeaveDate').value = '';
+  document.getElementById('empEditNote').value = '';
+  updateRateLabel();
+
+  const actions = document.getElementById('empEditActions');
+  actions.innerHTML = `
+    <button class="modal-btn secondary" onclick="closeModal('empEditModal')">취소</button>
+    <button class="modal-btn primary" onclick="saveEmployee()">추가</button>
+  `;
+  document.getElementById('empDeleteArea').innerHTML = '';
+  openModal('empEditModal');
+}
+
+function openEditEmployee(empId) {
+  const emp = DB.getEmployees().find(e => e.id === empId);
+  document.getElementById('empEditTitle').textContent = '직원 수정';
+  document.getElementById('empEditId').value = emp.id;
+  document.getElementById('empEditName').value = emp.name;
+  document.getElementById('empEditType').value = emp.type;
+  document.getElementById('empEditStatus').value = emp.status;
+  document.getElementById('empEditPhone').value = emp.phone || '';
+  document.getElementById('empEditAccount').value = emp.account || '';
+  document.getElementById('empEditBank').value = emp.bank || '';
+  document.getElementById('empEditRate').value = emp.rate || '';
+  document.getElementById('empEditJoinDate').value = emp.joinDate || '';
+  document.getElementById('empEditLeaveDate').value = emp.leaveDate || '';
+  document.getElementById('empEditNote').value = emp.note || '';
+  updateRateLabel();
+
+  const actions = document.getElementById('empEditActions');
+  actions.innerHTML = `
+    <button class="modal-btn secondary" onclick="closeModal('empEditModal')">취소</button>
+    <button class="modal-btn primary" onclick="saveEmployee()">저장</button>
+  `;
+
+  const deleteArea = document.getElementById('empDeleteArea');
+  const hasRecords = Object.values(DB.getAttendance()).some(day => day[emp.id]);
+  const canDelete = !hasRecords || emp.status === '퇴사';
+
+  if (canDelete) {
+    deleteArea.innerHTML = `
+      <div class="delete-area">
+        <button class="delete-text-btn" onclick="deleteEmployee('${emp.id}')">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          직원 삭제
+        </button>
+      </div>
+    `;
+  } else {
+    deleteArea.innerHTML = '';
+  }
+  openModal('empEditModal');
+}
+
+function updateRateLabel() {
+  const type = document.getElementById('empEditType').value;
+  document.getElementById('empEditRateLabel').textContent = type === '정직원' ? '일급 (원)' : '시급 (원)';
+  // 추가 모드일 때만 기본값 변경
+  if (!document.getElementById('empEditId').value) {
+    document.getElementById('empEditRate').value = type === '정직원' ? '130000' : '10000';
+  }
+}
+document.getElementById('empEditType').addEventListener('change', updateRateLabel);
+
+function saveEmployee() {
+  const name = document.getElementById('empEditName').value.trim();
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+
+  const id = document.getElementById('empEditId').value || ('emp_' + Date.now());
+  const emp = {
+    id,
+    name,
+    type: document.getElementById('empEditType').value,
+    status: document.getElementById('empEditStatus').value,
+    phone: document.getElementById('empEditPhone').value.trim(),
+    account: document.getElementById('empEditAccount').value.trim(),
+    bank: document.getElementById('empEditBank').value.trim(),
+    rate: document.getElementById('empEditRate').value,
+    joinDate: document.getElementById('empEditJoinDate').value,
+    leaveDate: document.getElementById('empEditLeaveDate').value,
+    note: document.getElementById('empEditNote').value.trim(),
+  };
+
+  const employees = DB.getEmployees();
+  const idx = employees.findIndex(e => e.id === id);
+  if (idx >= 0) employees[idx] = emp;
+  else employees.push(emp);
+  DB.saveEmployees(employees);
+
+  closeModal('empEditModal');
+  renderEmployeeList();
+  renderAttList();
+}
+
+function deleteEmployee(empId) {
+  showConfirm('직원 삭제', '정말 삭제하시겠나요?\n출근 기록은 유지됩니다.', () => {
+    const employees = DB.getEmployees().filter(e => e.id !== empId);
+    DB.saveEmployees(employees);
+    closeModal('empEditModal');
+    renderEmployeeList();
+    renderAttList();
+  }, true);
+}
+
+// ===================== CSV Export =====================
+let exportYear, exportMonth, exportType = 'all';
+
+function openExportModal() {
+  const now = new Date();
+  exportYear = now.getFullYear();
+  exportMonth = now.getMonth() + 1;
+  exportType = 'all';
+
+  const yearSel = document.getElementById('exportYearSelect');
+  yearSel.innerHTML = '';
+  for (let y = exportYear + 1; y >= 2020; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = `${y}년`;
+    if (y === exportYear) opt.selected = true;
+    yearSel.appendChild(opt);
+  }
+
+  const monthSel = document.getElementById('exportMonthSelect');
+  monthSel.innerHTML = '';
+  for (let m = 1; m <= 12; m++) {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = `${m}월`;
+    if (m === exportMonth) opt.selected = true;
+    monthSel.appendChild(opt);
+  }
+
+  updateExportModalUI();
+  openModal('exportModal');
+}
+
+function updateExportModalUI() {
+  ['all','regular','daily'].forEach(t => {
+    document.getElementById('expType-' + t).classList.toggle('active', exportType === t);
+  });
+}
+
+function setExportType(type) {
+  exportType = type;
+  updateExportModalUI();
+}
+
+function runExport() {
+  const pad = n => String(n).padStart(2, '0');
+  const employees = DB.getEmployees().filter(e => {
+    if (exportType === 'regular') return e.type === '정직원';
+    if (exportType === 'daily')   return e.type === '일용직';
+    return true;
+  });
+  const att = DB.getAttendance();
+  const settings = DB.getSettings();
+
+  let csv = '﻿'; // BOM
+  csv += `${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월\n`;
+  csv += '이름,직급,날짜,상태,출근시간,근무시간,비고\n';
+
+  const daysInMonth = new Date(exportYear, exportMonth, 0).getDate();
+  employees.forEach(emp => {
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${exportYear}-${pad(exportMonth)}-${pad(d)}`;
+      const rec = (att[dateStr] || {})[emp.id] || {};
+      if (!rec.status) return;
+      csv += `${emp.name},${emp.type},${d}일,${rec.status},${rec.startTime||''},${rec.workHours||''},${rec.note||''}\n`;
+    }
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const typeLabel = exportType === 'regular' ? '_정직원' : exportType === 'daily' ? '_일용직' : '';
+  a.download = `출근부_${exportYear}년${exportMonth}월${typeLabel}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  closeModal('exportModal');
+}
+
+// ===================== Modal Helpers =====================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ===================== Confirm Dialog =====================
+function showConfirm(title, msg, onOk, isDanger = false) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.className = isDanger ? 'confirm-btn danger' : 'confirm-btn primary';
+  pendingConfirmFn = onOk;
+  okBtn.onclick = () => { closeConfirm(); pendingConfirmFn && pendingConfirmFn(); };
+  document.getElementById('confirmDialog').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmDialog').classList.remove('open');
+}
+
+// ===================== Dummy Data =====================
+const DUMMY_VERSION = 'v3';
+
+function loadDummyData() {
+  if (localStorage.getItem('dummyVersion') === DUMMY_VERSION) return;
+  localStorage.clear();
+  localStorage.setItem('dummyVersion', DUMMY_VERSION);
+
+  const employees = [
+    // 정직원 8명 재직 + 1명 퇴사
+    { id: 'r1', name: '김민준', type: '정직원', status: '재직', phone: '010-1234-5678', account: '110-123-456789', bank: '신한',       rate: 130000, joinDate: '2022-03-01', leaveDate: '',       note: '' },
+    { id: 'r2', name: '이수진', type: '정직원', status: '재직', phone: '010-2345-6789', account: '352-0987-6543',  bank: '농협',       rate: 120000, joinDate: '2021-07-15', leaveDate: '',       note: '오전 근무 위주' },
+    { id: 'r3', name: '박현우', type: '정직원', status: '재직', phone: '010-3456-7890', account: '3333-01-2345',  bank: '카카오뱅크', rate: 140000, joinDate: '2023-01-10', leaveDate: '',       note: '' },
+    { id: 'r4', name: '정지우', type: '정직원', status: '재직', phone: '010-4567-8901', account: '620-910-1234',  bank: '우리',       rate: 125000, joinDate: '2022-08-01', leaveDate: '',       note: '' },
+    { id: 'r5', name: '한예린', type: '정직원', status: '재직', phone: '010-5678-9012', account: '110-456-7890',  bank: '신한',       rate: 128000, joinDate: '2023-05-15', leaveDate: '',       note: '' },
+    { id: 'r6', name: '오세훈', type: '정직원', status: '재직', phone: '010-6789-0123', account: '352-1234-5678', bank: '농협',       rate: 135000, joinDate: '2021-11-01', leaveDate: '',       note: '' },
+    { id: 'r7', name: '임나은', type: '정직원', status: '재직', phone: '010-7890-1234', account: '3333-02-3456',  bank: '카카오뱅크', rate: 122000, joinDate: '2024-02-01', leaveDate: '',       note: '' },
+    { id: 'r8', name: '신준호', type: '정직원', status: '재직', phone: '010-8901-2345', account: '620-920-2345',  bank: '우리',       rate: 132000, joinDate: '2023-09-01', leaveDate: '',       note: '' },
+    { id: 'r9', name: '최유리', type: '정직원', status: '퇴사', phone: '010-9012-3456', account: '110-789-0123',  bank: '신한',       rate: 125000, joinDate: '2020-05-01', leaveDate: '2024-08-31', note: '개인 사유 퇴사' },
+    // 일용직 9명 재직 + 1명 퇴사
+    { id: 'd1', name: '강태양', type: '일용직', status: '재직', phone: '010-1111-2222', account: '110-111-2222',  bank: '신한',       rate: 10000,  joinDate: '2023-09-01', leaveDate: '',       note: '' },
+    { id: 'd2', name: '윤하늘', type: '일용직', status: '재직', phone: '010-2222-3333', account: '352-222-3333',  bank: '농협',       rate: 11000,  joinDate: '2024-03-01', leaveDate: '',       note: '주말 불가' },
+    { id: 'd3', name: '정바다', type: '일용직', status: '재직', phone: '010-3333-4444', account: '3333-33-4444',  bank: '카카오뱅크', rate: 10500,  joinDate: '2024-06-15', leaveDate: '',       note: '' },
+    { id: 'd4', name: '김도윤', type: '일용직', status: '재직', phone: '010-4444-5555', account: '620-444-5555',  bank: '우리',       rate: 10000,  joinDate: '2024-01-10', leaveDate: '',       note: '' },
+    { id: 'd5', name: '이지수', type: '일용직', status: '재직', phone: '010-5555-6666', account: '110-555-6666',  bank: '신한',       rate: 12000,  joinDate: '2023-11-01', leaveDate: '',       note: '오후만 가능' },
+    { id: 'd6', name: '박서연', type: '일용직', status: '재직', phone: '010-6666-7777', account: '352-666-7777',  bank: '농협',       rate: 10000,  joinDate: '2024-07-01', leaveDate: '',       note: '' },
+    { id: 'd7', name: '최준혁', type: '일용직', status: '재직', phone: '010-7777-8888', account: '3333-77-8888',  bank: '카카오뱅크', rate: 11500,  joinDate: '2024-04-01', leaveDate: '',       note: '' },
+    { id: 'd8', name: '장수아', type: '일용직', status: '재직', phone: '010-8888-9999', account: '620-888-9999',  bank: '우리',       rate: 10000,  joinDate: '2024-08-15', leaveDate: '',       note: '' },
+    { id: 'd9', name: '황민재', type: '일용직', status: '재직', phone: '010-9999-0000', account: '110-999-0000',  bank: '신한',       rate: 10500,  joinDate: '2024-05-01', leaveDate: '',       note: '' },
+    { id: 'd10',name: '한소라', type: '일용직', status: '퇴사', phone: '010-0000-1111', account: '352-000-1111',  bank: '농협',       rate: 10000,  joinDate: '2023-06-01', leaveDate: '2024-09-30', note: '계약 만료' },
+  ];
+  DB.saveEmployees(employees);
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const lastDay = now.getDate() - 1;
+  const pad = n => String(n).padStart(2, '0');
+  const att = {};
+
+  if (lastDay < 1) { DB.saveAttendance(att); return; }
+
+  // 정직원 8명 재직: 각자 패턴 다르게
+  const regularIds = ['r1','r2','r3','r4','r5','r6','r7','r8'];
+  // 특별 상태 (empId → {day: status})
+  const special = {
+    r1: { 3:'무휴', 10:'유휴' },
+    r2: { 5:'유휴', 14:'무휴' },
+    r3: { 2:'유휴' },
+    r4: { 7:'무휴', 12:'유휴' },
+    r5: { 4:'유휴' },
+    r6: { 6:'무휴' },
+    r7: { 8:'유휴', 15:'무휴' },
+    r8: { 11:'유휴' },
+  };
+  const specialNote = {
+    r1: { 3:'가족행사', 10:'연차' },
+    r2: { 5:'병원', 14:'개인사정' },
+    r3: { 2:'연차사용' },
+    r4: { 7:'개인사정', 12:'연차' },
+    r5: { 4:'병원방문' },
+    r6: { 6:'가족행사' },
+    r7: { 8:'연차', 15:'개인사정' },
+    r8: { 11:'병원' },
+  };
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dateStr = `${y}-${pad(m)}-${pad(d)}`;
+    if (!att[dateStr]) att[dateStr] = {};
+    regularIds.forEach(id => {
+      const status = (special[id] || {})[d] || '출근';
+      const note   = (specialNote[id] || {})[d] || '';
+      att[dateStr][id] = { status, note };
+    });
+  }
+
+  // 일용직 9명: 각자 다른 패턴 (출근 안 한 날 → 빨간 점)
+  const dailyPatterns = {
+    d1: d => d % 2 === 1,           // 홀수일만
+    d2: d => d % 3 !== 0,           // 3의배수 제외
+    d3: d => d % 2 === 0,           // 짝수일만
+    d4: d => d % 4 !== 0,           // 4의배수 제외
+    d5: d => d % 3 === 1,           // 1,4,7,10,13...
+    d6: d => d % 2 === 1 && d % 7 !== 0, // 홀수이면서 7배수 제외
+    d7: d => d <= 10 || d % 2 === 0,    // 1~10 매일 + 이후 짝수
+    d8: d => d % 5 !== 0,           // 5의배수 제외
+    d9: d => d % 3 !== 1,           // 1,4,7... 제외
+  };
+  const dailyTimes = {
+    d1:'09:00', d2:'10:00', d3:'08:00', d4:'09:30',
+    d5:'13:00', d6:'09:00', d7:'08:00', d8:'10:00', d9:'09:00',
+  };
+  const dailyHours = {
+    d1:8, d2:6, d3:8, d4:7, d5:5, d6:8, d7:8, d8:6, d9:7,
+  };
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dateStr = `${y}-${pad(m)}-${pad(d)}`;
+    if (!att[dateStr]) att[dateStr] = {};
+    Object.keys(dailyPatterns).forEach(id => {
+      if (dailyPatterns[id](d)) {
+        att[dateStr][id] = {
+          status: '출근',
+          startTime: dailyTimes[id],
+          workHours: dailyHours[id],
+          note: (id === 'd1' && d === 9) ? '조퇴' : '',
+        };
+        if (id === 'd1' && d === 9) att[dateStr][id].workHours = 4;
+      }
+    });
+  }
+
+  DB.saveAttendance(att);
+}
+
+// ===================== Start =====================
+loadDummyData();
+init();
+</script>
+</body>
+</html>
