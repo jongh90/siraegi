@@ -58,8 +58,8 @@
     .att-btn.active-출근 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-종일 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-반일 { background: #5ac8fa; border-color: #5ac8fa; color: #fff; }
-    .att-btn.active-유휴 { background: #34c759; border-color: #34c759; color: #fff; }
-    .att-btn.active-무휴 { background: #ff9500; border-color: #ff9500; color: #fff; }
+    .att-btn.active-유급 { background: #34c759; border-color: #34c759; color: #fff; }
+    .att-btn.active-무급 { background: #ff9500; border-color: #ff9500; color: #fff; }
     .att-btn.active-미출근 { background: #ff3b30; border-color: #ff3b30; color: #fff; }
     .att-buttons:has([class*="active-"]) .att-btn:not([class*="active-"]) { color: #c7c7cc; border-color: #efefef; }
     .att-note { font-size: 11px; color: #8e8e93; cursor: pointer; padding: 0 4px; flex: 1; }
@@ -587,7 +587,7 @@ function renderRegularRow(row, emp, rec) {
   const btnGroup = document.createElement('div');
   btnGroup.className = 'att-buttons';
 
-  ['출근','유휴','무휴'].forEach(status => {
+  ['출근','유급','무급'].forEach(status => {
     const btn = document.createElement('button');
     btn.className = 'att-btn';
     btn.textContent = status;
@@ -1028,14 +1028,14 @@ function loadDummyData() {
   const regularIds = ['r1','r2','r3','r4','r5','r6','r7','r8'];
   // 특별 상태 (empId → {day: status})
   const special = {
-    r1: { 3:'무휴', 10:'유휴' },
-    r2: { 5:'유휴', 14:'무휴' },
-    r3: { 2:'유휴' },
-    r4: { 7:'무휴', 12:'유휴' },
-    r5: { 4:'유휴' },
-    r6: { 6:'무휴' },
-    r7: { 8:'유휴', 15:'무휴' },
-    r8: { 11:'유휴' },
+    r1: { 3:'무급', 10:'유급' },
+    r2: { 5:'유급', 14:'무급' },
+    r3: { 2:'유급' },
+    r4: { 7:'무급', 12:'유급' },
+    r5: { 4:'유급' },
+    r6: { 6:'무급' },
+    r7: { 8:'유급', 15:'무급' },
+    r8: { 11:'유급' },
   };
   const specialNote = {
     r1: { 3:'가족행사', 10:'연차' },
