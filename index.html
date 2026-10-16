@@ -60,7 +60,7 @@
     .att-btn.active-유휴 { background: #34c759; border-color: #34c759; color: #fff; }
     .att-btn.active-무휴 { background: #ff9500; border-color: #ff9500; color: #fff; }
     .att-btn.active-미출근 { background: #ff3b30; border-color: #ff3b30; color: #fff; }
-    .att-note { font-size: 11px; color: #8e8e93; min-width: 28px; cursor: pointer; text-align: right; }
+    .att-note { font-size: 11px; color: #8e8e93; flex: 1; cursor: pointer; padding: 0 4px; }
     .att-time-info { font-size: 11px; color: #8e8e93; }
 
     /* Daily work info for 일용직 */
@@ -594,6 +594,13 @@ function renderAttList() {
 }
 
 function renderRegularRow(row, emp, rec) {
+  const noteEl = document.createElement('div');
+  noteEl.className = 'att-note';
+  noteEl.textContent = rec.note || '비고';
+  noteEl.style.color = rec.note ? '#1c1c1e' : '#c7c7cc';
+  noteEl.onclick = () => openNoteModal(emp.id, rec.note || '');
+  row.appendChild(noteEl);
+
   const btnGroup = document.createElement('div');
   btnGroup.className = 'att-buttons';
 
@@ -606,13 +613,6 @@ function renderRegularRow(row, emp, rec) {
     btnGroup.appendChild(btn);
   });
   row.appendChild(btnGroup);
-
-  const noteEl = document.createElement('div');
-  noteEl.className = 'att-note';
-  noteEl.textContent = rec.note || '비고';
-  noteEl.style.color = rec.note ? '#1c1c1e' : '#c7c7cc';
-  noteEl.onclick = () => openNoteModal(emp.id, rec.note || '');
-  row.appendChild(noteEl);
 }
 
 function renderDailyRow(row, emp, rec) {
