@@ -980,8 +980,10 @@ function runPdfExport() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '△', '반일': '△', '무급': '×', '미출근': '×' };
 
-  function buildTable(employees, title) {
-    const header = `<tr><th>이름</th>${days.map(d => `<th>${d}</th>`).join('')}<th>출근</th><th>반일</th><th>결근</th></tr>`;
+  function buildTable(employees, title, type) {
+    const isRegular = type === '정직원';
+    const [col1, col2, col3] = isRegular ? ['출근', '유급', '무급'] : ['종일', '반일', '미출근'];
+    const header = `<tr><th>이름</th>${days.map(d => `<th>${d}</th>`).join('')}<th>${col1}</th><th>${col2}</th><th>${col3}</th></tr>`;
     const rows = employees.map(emp => {
       let full = 0, half = 0, absent = 0;
       const cells = days.map(d => {
@@ -1016,8 +1018,8 @@ function runPdfExport() {
   @media print { @page { size: A4 landscape; margin: 10mm; } }
 </style></head><body>
 <h1>${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월</h1>
-${regular.length ? buildTable(regular, '정직원') : ''}
-${daily.length   ? buildTable(daily,   '일용직') : ''}
+${regular.length ? buildTable(regular, '정직원', '정직원') : ''}
+${daily.length   ? buildTable(daily,   '일용직', '일용직') : ''}
 <script>window.onload = () => { window.print(); }<\/script>
 </body></html>`;
 
@@ -1035,12 +1037,14 @@ function runExport() {
 
   const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '△', '반일': '△', '무급': '×', '미출근': '×' };
 
-  function buildSheet(employees) {
+  function buildSheet(employees, type) {
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const isRegular = type === '정직원';
 
     // Header rows
     const titleRow = [`${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월`];
-    const headerRow = ['이름', ...days.map(d => `${d}일`), '출근', '반일', '결근'];
+    const [col1, col2, col3] = isRegular ? ['출근', '유급', '무급'] : ['종일', '반일', '미출근'];
+    const headerRow = ['이름', ...days.map(d => `${d}일`), col1, col2, col3];
 
     const dataRows = employees.map(emp => {
       let fullCount = 0, halfCount = 0, absentCount = 0;
@@ -1072,11 +1076,11 @@ function runExport() {
 
   if (exportType === 'all' || exportType === 'regular') {
     const emps = allEmployees.filter(e => e.type === '정직원');
-    if (emps.length) XLSX.utils.book_append_sheet(wb, buildSheet(emps), '정직원');
+    if (emps.length) XLSX.utils.book_append_sheet(wb, buildSheet(emps, '정직원'), '정직원');
   }
   if (exportType === 'all' || exportType === 'daily') {
     const emps = allEmployees.filter(e => e.type === '일용직');
-    if (emps.length) XLSX.utils.book_append_sheet(wb, buildSheet(emps), '일용직');
+    if (emps.length) XLSX.utils.book_append_sheet(wb, buildSheet(emps, '일용직'), '일용직');
   }
 
   const typeLabel = exportType === 'regular' ? '_정직원' : exportType === 'daily' ? '_일용직' : '';
@@ -1114,7 +1118,7 @@ function closeConfirm() {
 }
 
 // ===================== Seed Data =====================
-const SEED_VERSION = 'v5';
+const SEED_VERSION = 'v6';
 
 function loadDummyData() {
   if (localStorage.getItem('dummyVersion') === SEED_VERSION) return;
@@ -1140,6 +1144,72 @@ function loadDummyData() {
     { id: 'd8', name: '일용직8', type: '일용직', status: '재직', phone: '010-2000-0008', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
   ];
   DB.saveEmployees(employees);
+
+  // 2026년 9월, 10월 샘플 출근 데이터
+  const att = {};
+  const pad = n => String(n).padStart(2, '0');
+
+  // 정직원 패턴: 기본 출근, 특정 날 유급/무급
+  const regularSpecial = {
+    r1: { 5:'유급', 6:'유급', 15:'무급' },
+    r2: { 12:'유급', 13:'유급' },
+    r3: { 3:'무급', 20:'유급', 21:'유급' },
+    r4: { 8:'유급', 25:'무급' },
+    r5: { 10:'무급', 11:'무급', 22:'유급' },
+    r6: { 17:'유급', 28:'유급', 29:'유급' },
+  };
+  // 일용직 패턴: 일부 날만 종일/반일/미출근
+  const dailyPattern = (id, d) => {
+    const patterns = {
+      d1: d => d % 7 !== 0 && d % 3 !== 0,
+      d2: d => d % 2 === 1,
+      d3: d => d <= 20 && d % 2 === 0,
+      d4: d => d % 5 !== 0,
+      d5: d => d >= 5 && d % 3 === 1,
+      d6: d => d % 4 !== 0,
+      d7: d => d % 6 !== 0 && d % 7 !== 0,
+      d8: d => d % 2 === 0 && d % 6 !== 0,
+    };
+    return patterns[id] ? patterns[id](d) : false;
+  };
+  const dailyHalfDays = {
+    d1: new Set([4, 11, 18]),
+    d2: new Set([7, 21]),
+    d3: new Set([8, 16]),
+    d4: new Set([3, 13, 23]),
+    d5: new Set([10, 19]),
+    d6: new Set([5, 25]),
+    d7: new Set([9, 17]),
+    d8: new Set([6, 20]),
+  };
+
+  [9, 10].forEach(month => {
+    const daysInMonth = new Date(2026, month, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      // 일요일은 휴무
+      const dow = new Date(2026, month - 1, d).getDay();
+      if (dow === 0) continue;
+
+      const dateStr = `2026-${pad(month)}-${pad(d)}`;
+      att[dateStr] = {};
+
+      // 정직원
+      ['r1','r2','r3','r4','r5','r6'].forEach(id => {
+        const status = (regularSpecial[id] || {})[d] || '출근';
+        att[dateStr][id] = { status, note: '' };
+      });
+
+      // 일용직
+      ['d1','d2','d3','d4','d5','d6','d7','d8'].forEach(id => {
+        if (dailyPattern(id, d)) {
+          const status = (dailyHalfDays[id] || new Set()).has(d) ? '반일' : '종일';
+          att[dateStr][id] = { status, note: '' };
+        }
+      });
+    }
+  });
+
+  DB.saveAttendance(att);
 }
 
 // ===================== Start =====================
