@@ -60,8 +60,10 @@
     .att-btn.active-무휴 { background: #ff9500; border-color: #ff9500; color: #fff; }
     .att-btn.active-미출근 { background: #ff3b30; border-color: #ff3b30; color: #fff; }
     .att-buttons:has([class*="active-"]) .att-btn:not([class*="active-"]) { color: #c7c7cc; border-color: #efefef; }
-    .att-note { font-size: 11px; color: #8e8e93; cursor: pointer; padding: 0 4px; }
-    .att-buttons { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; }
+    .att-note { font-size: 11px; color: #8e8e93; cursor: pointer; padding: 0 4px; flex: 1; }
+    .att-note-icon { background: none; border: none; cursor: pointer; padding: 4px; color: #c7c7cc; display: flex; align-items: center; }
+    .att-note-icon.has-note { color: #007aff; }
+    .att-buttons { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
     .att-time-info { font-size: 11px; color: #8e8e93; }
 
     /* Daily work info for 일용직 */
@@ -595,12 +597,13 @@ function renderAttList() {
 }
 
 function renderRegularRow(row, emp, rec) {
-  const noteEl = document.createElement('div');
-  noteEl.className = 'att-note';
-  noteEl.textContent = rec.note || '비고';
-  noteEl.style.color = rec.note ? '#1c1c1e' : '#c7c7cc';
-  noteEl.onclick = () => openNoteModal(emp.id, rec.note || '');
-  row.appendChild(noteEl);
+  if (rec.note) {
+    const noteEl = document.createElement('div');
+    noteEl.className = 'att-note';
+    noteEl.textContent = rec.note;
+    noteEl.onclick = () => openNoteModal(emp.id, rec.note || '');
+    row.appendChild(noteEl);
+  }
 
   const btnGroup = document.createElement('div');
   btnGroup.className = 'att-buttons';
@@ -613,6 +616,13 @@ function renderRegularRow(row, emp, rec) {
     btn.onclick = () => setRegularStatus(emp.id, status, rec);
     btnGroup.appendChild(btn);
   });
+
+  const noteIcon = document.createElement('button');
+  noteIcon.className = 'att-note-icon' + (rec.note ? ' has-note' : '');
+  noteIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  noteIcon.onclick = () => openNoteModal(emp.id, rec.note || '');
+  btnGroup.appendChild(noteIcon);
+
   row.appendChild(btnGroup);
 }
 
