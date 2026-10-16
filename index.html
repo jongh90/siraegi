@@ -241,7 +241,8 @@
     </div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeModal('exportModal')">취소</button>
-      <button class="modal-btn primary" onclick="runExport()">엑셀 내보내기</button>
+      <button class="modal-btn" style="background:#34c759;color:#fff;" onclick="runPdfExport()">PDF</button>
+      <button class="modal-btn primary" onclick="runExport()">엑셀</button>
     </div>
   </div>
 </div>
@@ -970,6 +971,60 @@ function openExportModal() {
 }
 
 function updateExportModalUI() {}
+
+function runPdfExport() {
+  const pad = n => String(n).padStart(2, '0');
+  const settings = DB.getSettings();
+  const att = DB.getAttendance();
+  const daysInMonth = new Date(exportYear, exportMonth, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '△', '반일': '△', '무급': '×', '미출근': '×' };
+
+  function buildTable(employees, title) {
+    const header = `<tr><th>이름</th>${days.map(d => `<th>${d}</th>`).join('')}<th>출근</th><th>반일</th><th>결근</th></tr>`;
+    const rows = employees.map(emp => {
+      let full = 0, half = 0, absent = 0;
+      const cells = days.map(d => {
+        const dateStr = `${exportYear}-${pad(exportMonth)}-${pad(d)}`;
+        const status = ((att[dateStr] || {})[emp.id] || {}).status || '';
+        const sym = STATUS_SYMBOL[status] || '';
+        if (status === '출근' || status === '종일') full++;
+        else if (status === '유급' || status === '반일') half++;
+        else if (status === '무급' || status === '미출근') absent++;
+        return `<td>${sym}</td>`;
+      }).join('');
+      return `<tr><td class="name">${emp.name}</td>${cells}<td>${full}</td><td>${half}</td><td>${absent}</td></tr>`;
+    }).join('');
+    return `<h2>${title}</h2><table>${header}${rows}</table>`;
+  }
+
+  const allEmps = DB.getEmployees().filter(e => e.status === '재직');
+  const regular = allEmps.filter(e => e.type === '정직원');
+  const daily   = allEmps.filter(e => e.type === '일용직');
+
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<title>${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Noto Sans KR', sans-serif; font-size: 9px; padding: 10mm; }
+  h1 { font-size: 13px; text-align: center; margin-bottom: 6px; }
+  h2 { font-size: 10px; margin: 10px 0 4px; color: #555; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th, td { border: 1px solid #ccc; text-align: center; padding: 2px 1px; word-break: keep-all; }
+  th { background: #f5f5f5; font-weight: 600; }
+  td.name { text-align: left; padding-left: 3px; font-weight: 500; }
+  @media print { @page { size: A4 landscape; margin: 10mm; } }
+</style></head><body>
+<h1>${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월</h1>
+${regular.length ? buildTable(regular, '정직원') : ''}
+${daily.length   ? buildTable(daily,   '일용직') : ''}
+<script>window.onload = () => { window.print(); }<\/script>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
 
 function runExport() {
   const pad = n => String(n).padStart(2, '0');
