@@ -54,11 +54,11 @@
     .cal-day .alert-dot { position: absolute; bottom: 2px; width: 4px; height: 4px; background: #ff3b30; border-radius: 50%; }
 
     /* Attendance List */
-    .date-label { font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
-    .att-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f2f2f7; gap: 8px; }
+    .date-label { font-size: 15px; font-weight: 600; margin: 18px 0 8px; }
+    .att-row { display: flex; align-items: center; padding: 13px 0; border-bottom: 1px solid #f2f2f7; gap: 10px; }
     .att-row:last-child { border-bottom: none; }
-    .att-name { font-size: 14px; font-weight: 500; width: 52px; flex-shrink: 0; cursor: pointer; color: #007aff; }
-    .att-btn { padding: 5px 10px; border-radius: 7px; border: 1.5px solid #e5e5ea; background: #fff; font-size: 12px; font-weight: 500; cursor: pointer; color: #1c1c1e; transition: all 0.15s; white-space: nowrap; }
+    .att-name { font-size: 16px; font-weight: 500; width: 58px; flex-shrink: 0; cursor: pointer; color: #007aff; }
+    .att-btn { padding: 8px 14px; border-radius: 9px; border: 1.5px solid #e5e5ea; background: #fff; font-size: 14px; font-weight: 500; cursor: pointer; color: #1c1c1e; transition: all 0.15s; white-space: nowrap; }
     .att-btn.active-출근 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-종일 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-반일 { background: #5ac8fa; border-color: #5ac8fa; color: #fff; }
@@ -66,8 +66,8 @@
     .att-btn.active-무급 { background: #8e8e93; border-color: #8e8e93; color: #fff; }
     .att-btn.active-미출근 { background: #8e8e93; border-color: #8e8e93; color: #fff; }
     .att-buttons:has([class*="active-"]) .att-btn:not([class*="active-"]) { color: #c7c7cc; border-color: #efefef; }
-    .att-note { font-size: 13px; color: #8e8e93; cursor: pointer; padding: 0 4px; flex: 1; }
-    .att-note-icon { background: none; border: none; cursor: pointer; padding: 4px; color: #c7c7cc; display: flex; align-items: center; }
+    .att-note { font-size: 14px; color: #8e8e93; cursor: pointer; padding: 0 4px; flex: 1; }
+    .att-note-icon { background: none; border: none; cursor: pointer; padding: 6px; color: #c7c7cc; display: flex; align-items: center; }
     .att-note-icon.has-note { color: #007aff; }
     .att-buttons { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
     .att-time-info { font-size: 11px; color: #8e8e93; }
@@ -645,7 +645,7 @@ function renderRegularRow(row, emp, rec) {
 
   const noteIcon = document.createElement('button');
   noteIcon.className = 'att-note-icon' + (rec.note ? ' has-note' : '');
-  noteIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  noteIcon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
   noteIcon.onclick = () => openNoteModal(emp.id, rec.note || '');
   btnGroup.appendChild(noteIcon);
 
@@ -675,7 +675,7 @@ function renderDailyRow(row, emp, rec) {
 
   const noteIcon = document.createElement('button');
   noteIcon.className = 'att-note-icon' + (rec.note ? ' has-note' : '');
-  noteIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  noteIcon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
   noteIcon.onclick = () => openNoteModal(emp.id, rec.note || '');
   btnGroup.appendChild(noteIcon);
 
