@@ -164,8 +164,8 @@
 <!-- Header -->
 <div class="header">
   <h1 id="headerTitle">시래기밥상 출근부</h1>
-  <button class="export-icon-btn" onclick="openExportModal()" title="CSV 내보내기">
-    <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+  <button class="export-icon-btn" id="headerActionBtn" onclick="openExportModal()" title="CSV 내보내기">
+    <svg id="headerActionIcon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
   </button>
 </div>
 
@@ -193,7 +193,6 @@
 <!-- ==================== 직원관리 페이지 ==================== -->
 <div class="page" id="page-employees">
   <div id="empList"></div>
-  <button class="add-btn" onclick="openAddEmployee()">+ 직원 추가</button>
 </div>
 
 <!-- ==================== 하단 탭바 ==================== -->
@@ -455,6 +454,17 @@ function switchPage(page) {
   document.getElementById('tab-' + page).classList.add('active');
   document.getElementById('headerTitle').textContent = PAGE_TITLES[page] || '';
   currentPage = page;
+
+  const btn = document.getElementById('headerActionBtn');
+  if (page === 'employees') {
+    btn.title = '직원 추가';
+    btn.onclick = openAddEmployee;
+    btn.querySelector('svg').innerHTML = '<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>';
+  } else {
+    btn.title = 'CSV 내보내기';
+    btn.onclick = openExportModal;
+    btn.querySelector('svg').innerHTML = '<path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/>';
+  }
 }
 
 // ===================== Calendar =====================
