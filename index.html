@@ -54,14 +54,14 @@
     .att-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f2f2f7; gap: 8px; }
     .att-row:last-child { border-bottom: none; }
     .att-name { font-size: 14px; font-weight: 500; width: 52px; flex-shrink: 0; cursor: pointer; color: #007aff; }
-    .att-buttons { display: flex; gap: 5px; flex: 1; }
     .att-btn { padding: 5px 10px; border-radius: 7px; border: 1.5px solid #e5e5ea; background: #fff; font-size: 12px; font-weight: 500; cursor: pointer; color: #1c1c1e; transition: all 0.15s; white-space: nowrap; }
     .att-btn.active-출근 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-유휴 { background: #34c759; border-color: #34c759; color: #fff; }
     .att-btn.active-무휴 { background: #ff9500; border-color: #ff9500; color: #fff; }
     .att-btn.active-미출근 { background: #ff3b30; border-color: #ff3b30; color: #fff; }
     .att-buttons:has([class*="active-"]) .att-btn:not([class*="active-"]) { color: #c7c7cc; border-color: #efefef; }
-    .att-note { font-size: 11px; color: #8e8e93; flex: 1; cursor: pointer; padding: 0 4px; }
+    .att-note { font-size: 11px; color: #8e8e93; cursor: pointer; padding: 0 4px; }
+    .att-buttons { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; }
     .att-time-info { font-size: 11px; color: #8e8e93; }
 
     /* Daily work info for 일용직 */
