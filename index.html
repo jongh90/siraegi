@@ -939,15 +939,8 @@ function openExportModal() {
   openModal('exportModal');
 }
 
-function updateExportModalUI() {
-  ['all','regular','daily'].forEach(t => {
-    document.getElementById('expType-' + t).classList.toggle('active', exportType === t);
-  });
-}
+function updateExportModalUI() {}
 
-function setExportType(type) {
-  exportType = type;
-  updateExportModalUI();
 }
 
 function runExport() {
