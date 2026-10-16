@@ -58,7 +58,7 @@
     .att-btn.active-출근 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-종일 { background: #007aff; border-color: #007aff; color: #fff; }
     .att-btn.active-반일 { background: #5ac8fa; border-color: #5ac8fa; color: #fff; }
-    .att-btn.active-유급 { background: #5856d6; border-color: #5856d6; color: #fff; }
+    .att-btn.active-유급 { background: #34c759; border-color: #34c759; color: #fff; }
     .att-btn.active-무급 { background: #8e8e93; border-color: #8e8e93; color: #fff; }
     .att-btn.active-미출근 { background: #8e8e93; border-color: #8e8e93; color: #fff; }
     .att-buttons:has([class*="active-"]) .att-btn:not([class*="active-"]) { color: #c7c7cc; border-color: #efefef; }
@@ -75,13 +75,16 @@
     /* Employee List */
     .emp-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f7; cursor: pointer; gap: 10px; }
     .emp-row:last-child { border-bottom: none; }
-    .emp-name { font-size: 15px; font-weight: 500; flex: 1; }
-    .emp-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .emp-info { flex: 1; }
+    .emp-name { font-size: 15px; font-weight: 500; }
+    .emp-rate { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+    .emp-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; flex-shrink: 0; }
     .badge-정직원 { background: #e1f0ff; color: #007aff; }
     .badge-일용직 { background: #fff3e0; color: #ff9500; }
     .badge-재직 { background: #e8f8ed; color: #34c759; }
     .badge-퇴사 { background: #ffe5e5; color: #ff3b30; }
-    .emp-phone { font-size: 13px; color: #8e8e93; }
+    .emp-phone { font-size: 13px; color: #007aff; text-decoration: none; flex-shrink: 0; }
+    .section-header { font-size: 12px; color: #8e8e93; font-weight: 600; padding: 8px 4px 6px; position: sticky; top: 52px; background: #f2f2f7; z-index: 10; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* Add Button */
     .add-btn { width: 100%; padding: 14px; background: #007aff; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; }
@@ -744,22 +747,31 @@ function renderEmployeeList() {
     const group = employees.filter(e => e.type === type);
     if (group.length === 0) return;
 
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.textContent = `${label} (${group.length})`;
+    container.appendChild(header);
+
     const card = document.createElement('div');
     card.className = 'card';
-
-    const title = document.createElement('div');
-    title.className = 'card-title';
-    title.textContent = label;
-    card.appendChild(title);
 
     group.forEach(emp => {
       const row = document.createElement('div');
       row.className = 'emp-row';
       row.onclick = () => openEditEmployee(emp.id);
+
+      const rateUnit = emp.type === '정직원' ? '원/일' : '원/시';
+      const rateText = emp.rate ? `${Number(emp.rate).toLocaleString()}${rateUnit}` : '';
+
       row.innerHTML = `
-        <div class="emp-name">${emp.name}</div>
+        <div class="emp-info">
+          <div class="emp-name">${emp.name}</div>
+          ${rateText ? `<div class="emp-rate">${rateText}</div>` : ''}
+        </div>
         <span class="emp-badge badge-${emp.status}">${emp.status}</span>
-        <div class="emp-phone">${emp.phone || ''}</div>
+        ${emp.phone
+          ? `<a class="emp-phone" href="tel:${emp.phone}" onclick="event.stopPropagation()">${emp.phone}</a>`
+          : ''}
       `;
       card.appendChild(row);
     });
