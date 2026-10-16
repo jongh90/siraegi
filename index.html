@@ -31,7 +31,11 @@
     .card-title { font-size: 13px; color: #8e8e93; font-weight: 500; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
 
     /* Calendar */
-    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .calendar-body { overflow: hidden; transition: max-height 0.25s ease; }
+    .calendar-body.collapsed { max-height: 0 !important; }
+    .cal-toggle-icon { font-size: 16px; color: #8e8e93; transition: transform 0.25s; line-height: 1; }
+    .cal-toggle-icon.collapsed { transform: rotate(-90deg); }
+    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; cursor: pointer; user-select: none; }
     .calendar-header .month-label { font-size: 15px; font-weight: 600; }
     .calendar-nav { background: none; border: none; font-size: 20px; color: #007aff; cursor: pointer; padding: 2px 8px; }
     .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 2px; }
@@ -176,15 +180,20 @@
 <!-- ==================== 출근부 / 일용직 공유 페이지 ==================== -->
 <div class="page active" id="page-attendance">
   <div class="card">
-    <div class="calendar-header">
-      <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+    <div class="calendar-header" onclick="toggleCalendar()">
+      <button class="calendar-nav" onclick="event.stopPropagation();changeMonth(-1)">‹</button>
       <div class="month-label" id="calMonthLabel"></div>
-      <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button class="calendar-nav" onclick="event.stopPropagation();changeMonth(1)">›</button>
+        <span class="cal-toggle-icon collapsed" id="calToggleIcon">›</span>
+      </div>
     </div>
-    <div class="calendar-weekdays">
-      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    <div class="calendar-body collapsed" id="calBody" style="max-height:0">
+      <div class="calendar-weekdays">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+      <div class="calendar-grid" id="calGrid"></div>
     </div>
-    <div class="calendar-grid" id="calGrid"></div>
   </div>
 
   <div class="date-label" id="selectedDateLabel"></div>
@@ -525,6 +534,24 @@ function renderCalendar() {
 
     el.onclick = () => selectDate(dateStr);
     grid.appendChild(el);
+  }
+
+  // Update expanded height if calendar is open
+  const body = document.getElementById('calBody');
+  if (!body.classList.contains('collapsed')) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+  }
+}
+
+function toggleCalendar() {
+  const body = document.getElementById('calBody');
+  const icon = document.getElementById('calToggleIcon');
+  const collapsed = body.classList.toggle('collapsed');
+  icon.classList.toggle('collapsed', collapsed);
+  if (!collapsed) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+  } else {
+    body.style.maxHeight = '0';
   }
 }
 
@@ -1028,119 +1055,33 @@ function closeConfirm() {
   document.getElementById('confirmDialog').classList.remove('open');
 }
 
-// ===================== Dummy Data =====================
-const DUMMY_VERSION = 'v3';
+// ===================== Seed Data =====================
+const SEED_VERSION = 'v4';
 
 function loadDummyData() {
-  if (localStorage.getItem('dummyVersion') === DUMMY_VERSION) return;
+  if (localStorage.getItem('dummyVersion') === SEED_VERSION) return;
   localStorage.clear();
-  localStorage.setItem('dummyVersion', DUMMY_VERSION);
+  localStorage.setItem('dummyVersion', SEED_VERSION);
 
   const employees = [
-    // 정직원 8명 재직 + 1명 퇴사
-    { id: 'r1', name: '김민준', type: '정직원', status: '재직', phone: '010-1234-5678', account: '110-123-456789', bank: '신한',       rate: 130000, joinDate: '2022-03-01', leaveDate: '',       note: '' },
-    { id: 'r2', name: '이수진', type: '정직원', status: '재직', phone: '010-2345-6789', account: '352-0987-6543',  bank: '농협',       rate: 120000, joinDate: '2021-07-15', leaveDate: '',       note: '오전 근무 위주' },
-    { id: 'r3', name: '박현우', type: '정직원', status: '재직', phone: '010-3456-7890', account: '3333-01-2345',  bank: '카카오뱅크', rate: 140000, joinDate: '2023-01-10', leaveDate: '',       note: '' },
-    { id: 'r4', name: '정지우', type: '정직원', status: '재직', phone: '010-4567-8901', account: '620-910-1234',  bank: '우리',       rate: 125000, joinDate: '2022-08-01', leaveDate: '',       note: '' },
-    { id: 'r5', name: '한예린', type: '정직원', status: '재직', phone: '010-5678-9012', account: '110-456-7890',  bank: '신한',       rate: 128000, joinDate: '2023-05-15', leaveDate: '',       note: '' },
-    { id: 'r6', name: '오세훈', type: '정직원', status: '재직', phone: '010-6789-0123', account: '352-1234-5678', bank: '농협',       rate: 135000, joinDate: '2021-11-01', leaveDate: '',       note: '' },
-    { id: 'r7', name: '임나은', type: '정직원', status: '재직', phone: '010-7890-1234', account: '3333-02-3456',  bank: '카카오뱅크', rate: 122000, joinDate: '2024-02-01', leaveDate: '',       note: '' },
-    { id: 'r8', name: '신준호', type: '정직원', status: '재직', phone: '010-8901-2345', account: '620-920-2345',  bank: '우리',       rate: 132000, joinDate: '2023-09-01', leaveDate: '',       note: '' },
-    { id: 'r9', name: '최유리', type: '정직원', status: '퇴사', phone: '010-9012-3456', account: '110-789-0123',  bank: '신한',       rate: 125000, joinDate: '2020-05-01', leaveDate: '2024-08-31', note: '개인 사유 퇴사' },
-    // 일용직 9명 재직 + 1명 퇴사
-    { id: 'd1', name: '강태양', type: '일용직', status: '재직', phone: '010-1111-2222', account: '110-111-2222',  bank: '신한',       rate: 10000,  joinDate: '2023-09-01', leaveDate: '',       note: '' },
-    { id: 'd2', name: '윤하늘', type: '일용직', status: '재직', phone: '010-2222-3333', account: '352-222-3333',  bank: '농협',       rate: 11000,  joinDate: '2024-03-01', leaveDate: '',       note: '주말 불가' },
-    { id: 'd3', name: '정바다', type: '일용직', status: '재직', phone: '010-3333-4444', account: '3333-33-4444',  bank: '카카오뱅크', rate: 10500,  joinDate: '2024-06-15', leaveDate: '',       note: '' },
-    { id: 'd4', name: '김도윤', type: '일용직', status: '재직', phone: '010-4444-5555', account: '620-444-5555',  bank: '우리',       rate: 10000,  joinDate: '2024-01-10', leaveDate: '',       note: '' },
-    { id: 'd5', name: '이지수', type: '일용직', status: '재직', phone: '010-5555-6666', account: '110-555-6666',  bank: '신한',       rate: 12000,  joinDate: '2023-11-01', leaveDate: '',       note: '오후만 가능' },
-    { id: 'd6', name: '박서연', type: '일용직', status: '재직', phone: '010-6666-7777', account: '352-666-7777',  bank: '농협',       rate: 10000,  joinDate: '2024-07-01', leaveDate: '',       note: '' },
-    { id: 'd7', name: '최준혁', type: '일용직', status: '재직', phone: '010-7777-8888', account: '3333-77-8888',  bank: '카카오뱅크', rate: 11500,  joinDate: '2024-04-01', leaveDate: '',       note: '' },
-    { id: 'd8', name: '장수아', type: '일용직', status: '재직', phone: '010-8888-9999', account: '620-888-9999',  bank: '우리',       rate: 10000,  joinDate: '2024-08-15', leaveDate: '',       note: '' },
-    { id: 'd9', name: '황민재', type: '일용직', status: '재직', phone: '010-9999-0000', account: '110-999-0000',  bank: '신한',       rate: 10500,  joinDate: '2024-05-01', leaveDate: '',       note: '' },
-    { id: 'd10',name: '한소라', type: '일용직', status: '퇴사', phone: '010-0000-1111', account: '352-000-1111',  bank: '농협',       rate: 10000,  joinDate: '2023-06-01', leaveDate: '2024-09-30', note: '계약 만료' },
+    // 정직원 6명
+    { id: 'r1', name: '김북연', type: '정직원', status: '재직', phone: '010-1000-0001', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'r2', name: '조유조', type: '정직원', status: '재직', phone: '010-1000-0002', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'r3', name: '김종현', type: '정직원', status: '재직', phone: '010-1000-0003', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'r4', name: '유나경', type: '정직원', status: '재직', phone: '010-1000-0004', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'r5', name: '김정순', type: '정직원', status: '재직', phone: '010-1000-0005', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'r6', name: '김정숙', type: '정직원', status: '재직', phone: '010-1000-0006', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    // 일용직 8명
+    { id: 'd1', name: '일용직1', type: '일용직', status: '재직', phone: '010-2000-0001', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd2', name: '일용직2', type: '일용직', status: '재직', phone: '010-2000-0002', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd3', name: '일용직3', type: '일용직', status: '재직', phone: '010-2000-0003', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd4', name: '일용직4', type: '일용직', status: '재직', phone: '010-2000-0004', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd5', name: '일용직5', type: '일용직', status: '재직', phone: '010-2000-0005', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd6', name: '일용직6', type: '일용직', status: '재직', phone: '010-2000-0006', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd7', name: '일용직7', type: '일용직', status: '재직', phone: '010-2000-0007', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
+    { id: 'd8', name: '일용직8', type: '일용직', status: '재직', phone: '010-2000-0008', account: '', bank: '', rate: 0, joinDate: '', leaveDate: '', note: '' },
   ];
   DB.saveEmployees(employees);
-
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth() + 1;
-  const lastDay = now.getDate() - 1;
-  const pad = n => String(n).padStart(2, '0');
-  const att = {};
-
-  if (lastDay < 1) { DB.saveAttendance(att); return; }
-
-  // 정직원 8명 재직: 각자 패턴 다르게
-  const regularIds = ['r1','r2','r3','r4','r5','r6','r7','r8'];
-  // 특별 상태 (empId → {day: status})
-  const special = {
-    r1: { 3:'무급', 10:'유급' },
-    r2: { 5:'유급', 14:'무급' },
-    r3: { 2:'유급' },
-    r4: { 7:'무급', 12:'유급' },
-    r5: { 4:'유급' },
-    r6: { 6:'무급' },
-    r7: { 8:'유급', 15:'무급' },
-    r8: { 11:'유급' },
-  };
-  const specialNote = {
-    r1: { 3:'가족행사', 10:'연차' },
-    r2: { 5:'병원', 14:'개인사정' },
-    r3: { 2:'연차사용' },
-    r4: { 7:'개인사정', 12:'연차' },
-    r5: { 4:'병원방문' },
-    r6: { 6:'가족행사' },
-    r7: { 8:'연차', 15:'개인사정' },
-    r8: { 11:'병원' },
-  };
-
-  for (let d = 1; d <= lastDay; d++) {
-    const dateStr = `${y}-${pad(m)}-${pad(d)}`;
-    if (!att[dateStr]) att[dateStr] = {};
-    regularIds.forEach(id => {
-      const status = (special[id] || {})[d] || '출근';
-      const note   = (specialNote[id] || {})[d] || '';
-      att[dateStr][id] = { status, note };
-    });
-  }
-
-  // 일용직 9명: 각자 다른 패턴 (출근 안 한 날 → 빨간 점)
-  const dailyPatterns = {
-    d1: d => d % 2 === 1,           // 홀수일만
-    d2: d => d % 3 !== 0,           // 3의배수 제외
-    d3: d => d % 2 === 0,           // 짝수일만
-    d4: d => d % 4 !== 0,           // 4의배수 제외
-    d5: d => d % 3 === 1,           // 1,4,7,10,13...
-    d6: d => d % 2 === 1 && d % 7 !== 0, // 홀수이면서 7배수 제외
-    d7: d => d <= 10 || d % 2 === 0,    // 1~10 매일 + 이후 짝수
-    d8: d => d % 5 !== 0,           // 5의배수 제외
-    d9: d => d % 3 !== 1,           // 1,4,7... 제외
-  };
-  const dailyTimes = {
-    d1:'09:00', d2:'10:00', d3:'08:00', d4:'09:30',
-    d5:'13:00', d6:'09:00', d7:'08:00', d8:'10:00', d9:'09:00',
-  };
-  const dailyHours = {
-    d1:8, d2:6, d3:8, d4:7, d5:5, d6:8, d7:8, d8:6, d9:7,
-  };
-
-  for (let d = 1; d <= lastDay; d++) {
-    const dateStr = `${y}-${pad(m)}-${pad(d)}`;
-    if (!att[dateStr]) att[dateStr] = {};
-    Object.keys(dailyPatterns).forEach(id => {
-      if (dailyPatterns[id](d)) {
-        att[dateStr][id] = {
-          status: '출근',
-          startTime: dailyTimes[id],
-          workHours: dailyHours[id],
-          note: (id === 'd1' && d === 9) ? '조퇴' : '',
-        };
-        if (id === 'd1' && d === 9) att[dateStr][id].workHours = 4;
-      }
-    });
-  }
-
-  DB.saveAttendance(att);
 }
 
 // ===================== Start =====================
