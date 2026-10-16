@@ -955,7 +955,7 @@ function runExport() {
 
     // Header rows
     const titleRow = [`${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월`];
-    const headerRow = ['이름', ...days.map(d => `${d}일`), '출근', '반일', '결근', '합계금액'];
+    const headerRow = ['이름', ...days.map(d => `${d}일`), '출근', '반일', '결근'];
 
     const dataRows = employees.map(emp => {
       let fullCount = 0, halfCount = 0, absentCount = 0;
@@ -968,18 +968,14 @@ function runExport() {
         else if (status === '무급' || status === '미출근') absentCount++;
         return sym;
       });
-      const rate = Number(emp.rate) || 0;
-      const total = emp.type === '정직원'
-        ? (fullCount + halfCount) * rate
-        : (fullCount * rate) + (halfCount * rate * 0.5);
-      return [emp.name, ...cells, fullCount, halfCount, absentCount, total];
+      return [emp.name, ...cells, fullCount, halfCount, absentCount];
     });
 
     const wsData = [titleRow, headerRow, ...dataRows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
     // Column widths
-    ws['!cols'] = [{ wch: 8 }, ...days.map(() => ({ wch: 4 })), { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 10 }];
+    ws['!cols'] = [{ wch: 8 }, ...days.map(() => ({ wch: 4 })), { wch: 5 }, { wch: 5 }, { wch: 5 }];
 
     // Merge title row
     ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headerRow.length - 1 } }];
