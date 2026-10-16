@@ -714,7 +714,7 @@ function showEmployeeInfo(empId) {
     [emp.type === '정직원' ? '일급' : '시급', emp.rate ? Number(emp.rate).toLocaleString() + '원' : '-'],
     ['입사일', emp.joinDate || '-'],
     ['퇴사일', emp.leaveDate || '-'],
-    ['특이사항', emp.note || '-'],
+    ['비고', emp.note || '-'],
   ];
   content.innerHTML = fields.map(([l, v]) =>
     `<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`
