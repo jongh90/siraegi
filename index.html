@@ -158,6 +158,7 @@
     .info-label { font-size: 14px; color: #8e8e93; }
     .info-value { font-size: 14px; font-weight: 500; }
   </style>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -945,36 +946,63 @@ function setExportType(type) {
 
 function runExport() {
   const pad = n => String(n).padStart(2, '0');
-  const employees = DB.getEmployees().filter(e => {
-    if (exportType === 'regular') return e.type === '정직원';
-    if (exportType === 'daily')   return e.type === '일용직';
-    return true;
-  });
-  const att = DB.getAttendance();
   const settings = DB.getSettings();
-
-  let csv = '﻿'; // BOM
-  csv += `${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월\n`;
-  csv += '이름,직급,날짜,상태,출근시간,근무시간,특이사항\n';
-
+  const att = DB.getAttendance();
   const daysInMonth = new Date(exportYear, exportMonth, 0).getDate();
-  employees.forEach(emp => {
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${exportYear}-${pad(exportMonth)}-${pad(d)}`;
-      const rec = (att[dateStr] || {})[emp.id] || {};
-      if (!rec.status) return;
-      csv += `${emp.name},${emp.type},${d}일,${rec.status},${rec.startTime||''},${rec.workHours||''},${rec.note||''}\n`;
-    }
-  });
+  const allEmployees = DB.getEmployees();
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
+  const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '△', '반일': '△', '무급': '×', '미출근': '×' };
+
+  function buildSheet(employees) {
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    // Header rows
+    const titleRow = [`${settings.storeName} 출근부 ${exportYear}년 ${exportMonth}월`];
+    const headerRow = ['이름', ...days.map(d => `${d}일`), '출근', '반일', '결근', '합계금액'];
+
+    const dataRows = employees.map(emp => {
+      let fullCount = 0, halfCount = 0, absentCount = 0;
+      const cells = days.map(d => {
+        const dateStr = `${exportYear}-${pad(exportMonth)}-${pad(d)}`;
+        const status = ((att[dateStr] || {})[emp.id] || {}).status || '';
+        const sym = STATUS_SYMBOL[status] || '';
+        if (status === '출근' || status === '종일') fullCount++;
+        else if (status === '유급' || status === '반일') halfCount++;
+        else if (status === '무급' || status === '미출근') absentCount++;
+        return sym;
+      });
+      const rate = Number(emp.rate) || 0;
+      const total = emp.type === '정직원'
+        ? (fullCount + halfCount) * rate
+        : (fullCount * rate) + (halfCount * rate * 0.5);
+      return [emp.name, ...cells, fullCount, halfCount, absentCount, total];
+    });
+
+    const wsData = [titleRow, headerRow, ...dataRows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws['!cols'] = [{ wch: 8 }, ...days.map(() => ({ wch: 4 })), { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 10 }];
+
+    // Merge title row
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headerRow.length - 1 } }];
+
+    return ws;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  if (exportType === 'all' || exportType === 'regular') {
+    const emps = allEmployees.filter(e => e.type === '정직원');
+    if (emps.length) XLSX.utils.book_append_sheet(wb, buildSheet(emps), '정직원');
+  }
+  if (exportType === 'all' || exportType === 'daily') {
+    const emps = allEmployees.filter(e => e.type === '일용직');
+    if (emps.length) XLSX.utils.book_append_sheet(wb, buildSheet(emps), '일용직');
+  }
+
   const typeLabel = exportType === 'regular' ? '_정직원' : exportType === 'daily' ? '_일용직' : '';
-  a.download = `출근부_${exportYear}년${exportMonth}월${typeLabel}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `출근부_${exportYear}년${exportMonth}월${typeLabel}.xlsx`);
   closeModal('exportModal');
 }
 
