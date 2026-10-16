@@ -978,7 +978,7 @@ function runPdfExport() {
   const att = DB.getAttendance();
   const daysInMonth = new Date(exportYear, exportMonth, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '△', '반일': '△', '무급': '×', '미출근': '×' };
+  const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '휴', '무급': '휴', '반일': '⊖', '미출근': '×' };
 
   function buildTable(employees, title, type) {
     const isRegular = type === '정직원';
@@ -1035,7 +1035,7 @@ function runExport() {
   const daysInMonth = new Date(exportYear, exportMonth, 0).getDate();
   const allEmployees = DB.getEmployees();
 
-  const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '△', '반일': '△', '무급': '×', '미출근': '×' };
+  const STATUS_SYMBOL = { '출근': '○', '종일': '○', '유급': '휴', '무급': '휴', '반일': '⊖', '미출근': '×' };
 
   function buildSheet(employees, type) {
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
