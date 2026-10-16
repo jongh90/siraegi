@@ -224,17 +224,9 @@
         <select class="form-select" id="exportMonthSelect" onchange="exportMonth=+this.value"></select>
       </div>
     </div>
-    <div class="form-group">
-      <div class="form-label">대상</div>
-      <div class="export-type-group">
-        <button class="export-type-btn active" id="expType-all"      onclick="setExportType('all')">전체</button>
-        <button class="export-type-btn"        id="expType-regular"  onclick="setExportType('regular')">정직원</button>
-        <button class="export-type-btn"        id="expType-daily"    onclick="setExportType('daily')">일용직</button>
-      </div>
-    </div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeModal('exportModal')">취소</button>
-      <button class="modal-btn primary" onclick="runExport()">내보내기</button>
+      <button class="modal-btn primary" onclick="runExport()">엑셀 내보내기</button>
     </div>
   </div>
 </div>
