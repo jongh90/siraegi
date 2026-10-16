@@ -159,7 +159,7 @@
     /* Delete area in edit modal */
     .delete-area { margin-top: 16px; }
     .delete-text-btn { width: 100%; padding: 13px; background: #fff0f0; border: 1.5px solid #ffcdd2; border-radius: 12px; color: #ff3b30; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .delete-text-btn:active { background: #ffe5e5; }
+    .delete-text-btn:disabled { background: #f2f2f7; border-color: #e5e5ea; color: #c7c7cc; cursor: not-allowed; }
     .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
     .info-row:last-child { border-bottom: none; }
     .info-label { font-size: 14px; color: #8e8e93; }
@@ -868,19 +868,17 @@ function openEditEmployee(empId) {
   const deleteArea = document.getElementById('empDeleteArea');
   const hasRecords = Object.values(DB.getAttendance()).some(day => day[emp.id]);
   const canDelete = !hasRecords || emp.status === '퇴사';
+  const disabledAttr = canDelete ? '' : 'disabled';
+  const disabledTitle = canDelete ? '' : 'title="재직 중이고 출근 기록이 있어 삭제할 수 없습니다"';
 
-  if (canDelete) {
-    deleteArea.innerHTML = `
-      <div class="delete-area">
-        <button class="delete-text-btn" onclick="deleteEmployee('${emp.id}')">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          직원 삭제
-        </button>
-      </div>
-    `;
-  } else {
-    deleteArea.innerHTML = '';
-  }
+  deleteArea.innerHTML = `
+    <div class="delete-area">
+      <button class="delete-text-btn" ${disabledAttr} ${disabledTitle} onclick="deleteEmployee('${emp.id}')">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        직원 삭제
+      </button>
+    </div>
+  `;
   openModal('empEditModal');
 }
 
@@ -925,6 +923,10 @@ function saveEmployee() {
 }
 
 function deleteEmployee(empId) {
+  const emp = DB.getEmployees().find(e => e.id === empId);
+  if (!emp) return;
+  const hasRecords = Object.values(DB.getAttendance()).some(day => day[empId]);
+  if (hasRecords && emp.status !== '퇴사') return;
   showConfirm('직원 삭제', '정말 삭제하시겠나요?\n출근 기록은 유지됩니다.', () => {
     const employees = DB.getEmployees().filter(e => e.id !== empId);
     DB.saveEmployees(employees);
