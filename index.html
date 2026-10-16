@@ -93,7 +93,9 @@
     .modal-overlay.open { display: flex; }
     .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
     .modal-handle { width: 36px; height: 4px; background: #d1d1d6; border-radius: 2px; margin: 0 auto 16px; }
-    .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-size: 17px; font-weight: 600; }
+    .modal-close { background: none; border: none; cursor: pointer; color: #8e8e93; padding: 4px; display: flex; align-items: center; justify-content: center; }
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
     .modal-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
     .modal-btn.primary { background: #007aff; color: #fff; }
@@ -216,7 +218,10 @@
 <div class="modal-overlay" id="exportModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">내보내기</div>
+    <div class="modal-header">
+      <div class="modal-title">내보내기</div>
+      <button class="modal-close" onclick="closeModal('exportModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
     <div class="form-group">
       <div class="form-label">기간 선택</div>
       <div style="display:flex; gap:8px;">
@@ -235,7 +240,10 @@
 <div class="modal-overlay" id="empInfoModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="empInfoTitle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="empInfoTitle"></div>
+      <button class="modal-close" onclick="closeModal('empInfoModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
     <div id="empInfoContent"></div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeModal('empInfoModal')">닫기</button>
@@ -248,7 +256,10 @@
 <div class="modal-overlay" id="noteModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="noteModalTitle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="noteModalTitle"></div>
+      <button class="modal-close" onclick="closeModal('noteModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
     <div class="form-group">
       <div class="form-label">특이사항</div>
       <input class="form-input" id="noteInput" placeholder="특이사항 입력">
@@ -266,7 +277,10 @@
 <div class="modal-overlay" id="empEditModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="empEditTitle">직원 추가</div>
+    <div class="modal-header">
+      <div class="modal-title" id="empEditTitle">직원 추가</div>
+      <button class="modal-close" onclick="closeModal('empEditModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
     <input type="hidden" id="empEditId">
     <div class="form-row">
       <div class="form-group">
