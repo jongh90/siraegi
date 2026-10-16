@@ -266,27 +266,6 @@
 </div>
 
 <!-- ==================== 일용직 출근 입력 모달 ==================== -->
-<div class="modal-overlay" id="dailyAttModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="dailyAttTitle"></div>
-    <div class="form-row">
-      <div class="form-group">
-        <div class="form-label">출근시간</div>
-        <input class="form-input" id="dailyStartTime" type="time" value="09:00">
-      </div>
-      <div class="form-group">
-        <div class="form-label">근무시간 (h)</div>
-        <input class="form-input" id="dailyWorkHours" type="number" min="1" max="24" placeholder="8">
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="form-label">비고</div>
-      <input class="form-input" id="dailyNote" placeholder="선택사항">
-    </div>
-    <div class="modal-actions" id="dailyAttActions"></div>
-  </div>
-</div>
 
 <!-- ==================== 직원 추가/수정 모달 ==================== -->
 <div class="modal-overlay" id="empEditModal">
@@ -412,8 +391,6 @@ let calYear, calMonth; // 0-indexed month
 let selectedDate = null;
 let payrollYear, payrollMonth;
 let pendingNoteEmpId = null;
-let pendingDailyEmpId = null;
-let pendingDailyIsEdit = false;
 let pendingConfirmFn = null;
 let currentEmpInfoId = null;
 
@@ -627,49 +604,31 @@ function renderRegularRow(row, emp, rec) {
 }
 
 function renderDailyRow(row, emp, rec) {
+  if (rec.note) {
+    const noteEl = document.createElement('div');
+    noteEl.className = 'att-note';
+    noteEl.textContent = rec.note;
+    noteEl.onclick = () => openNoteModal(emp.id, rec.note || '');
+    row.appendChild(noteEl);
+  }
+
   const btnGroup = document.createElement('div');
   btnGroup.className = 'att-buttons';
 
-  if (rec.status === '출근') {
-    const btn = document.createElement('button');
-    btn.className = 'att-btn active-출근';
-    btn.textContent = '출근';
-    btn.onclick = () => openDailyModal(emp.id, true);
-    btnGroup.appendChild(btn);
-
-    const info = document.createElement('div');
-    info.className = 'att-work-detail';
-    if (rec.startTime) {
-      const t = document.createElement('span');
-      t.textContent = rec.startTime;
-      info.appendChild(t);
-    }
-    if (rec.workHours) {
-      const h = document.createElement('span');
-      h.textContent = rec.workHours + 'h';
-      info.appendChild(h);
-    }
-    if (rec.note) {
-      const n = document.createElement('span');
-      n.textContent = rec.note;
-      info.appendChild(n);
-    }
-    btnGroup.appendChild(info);
-  } else {
+  ['출근', '미출근'].forEach(status => {
     const btn = document.createElement('button');
     btn.className = 'att-btn';
-    btn.textContent = '출근';
-    btn.onclick = () => openDailyModal(emp.id, false);
+    btn.textContent = status;
+    if (rec.status === status) btn.classList.add('active-' + status);
+    btn.onclick = () => setDailyStatus(emp.id, status, rec);
     btnGroup.appendChild(btn);
+  });
 
-    if (!isFuture(selectedDate)) {
-      const absentEl = document.createElement('div');
-      absentEl.className = 'att-time-info';
-      absentEl.textContent = rec.status === '미출근' ? '미출근' : '';
-      absentEl.style.color = '#ff3b30';
-      btnGroup.appendChild(absentEl);
-    }
-  }
+  const noteIcon = document.createElement('button');
+  noteIcon.className = 'att-note-icon' + (rec.note ? ' has-note' : '');
+  noteIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  noteIcon.onclick = () => openNoteModal(emp.id, rec.note || '');
+  btnGroup.appendChild(noteIcon);
 
   row.appendChild(btnGroup);
 }
@@ -697,6 +656,20 @@ function setRegularStatus(empId, newStatus, currentRec) {
   }
 }
 
+function setDailyStatus(empId, newStatus, currentRec) {
+  if (currentRec.status === newStatus) {
+    showConfirm('출근 상태 변경', `${newStatus} 상태를 해제하시겠나요?`, () => {
+      DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: '' });
+      renderAttList();
+      renderCalendar();
+    });
+    return;
+  }
+  DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: newStatus });
+  renderAttList();
+  renderCalendar();
+}
+
 // ===================== Note Modal =====================
 function openNoteModal(empId, currentNote) {
   pendingNoteEmpId = empId;
@@ -715,57 +688,6 @@ function saveNote() {
   DB.saveAttendance(att);
   closeModal('noteModal');
   renderAttList();
-}
-
-// ===================== Daily Attendance Modal =====================
-function openDailyModal(empId, isEdit) {
-  pendingDailyEmpId = empId;
-  pendingDailyIsEdit = isEdit;
-  const emp = DB.getEmployees().find(e => e.id === empId);
-  document.getElementById('dailyAttTitle').textContent = emp.name + '님 ' + (isEdit ? '출근 편집' : '출근 입력');
-
-  const rec = DB.getDateRecord(selectedDate)[empId] || {};
-  document.getElementById('dailyStartTime').value = rec.startTime || '09:00';
-  document.getElementById('dailyWorkHours').value = rec.workHours || '';
-  document.getElementById('dailyNote').value = rec.note || '';
-
-  const actions = document.getElementById('dailyAttActions');
-  actions.innerHTML = '';
-  if (isEdit) {
-    const delBtn = document.createElement('button');
-    delBtn.className = 'modal-btn danger';
-    delBtn.textContent = '미출근으로 변경';
-    delBtn.onclick = () => {
-      DB.setEmpRecord(selectedDate, empId, { status: '미출근' });
-      closeModal('dailyAttModal');
-      renderAttList();
-      renderCalendar();
-    };
-    actions.appendChild(delBtn);
-  }
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'modal-btn secondary';
-  cancelBtn.textContent = '취소';
-  cancelBtn.onclick = () => closeModal('dailyAttModal');
-  actions.appendChild(cancelBtn);
-
-  const okBtn = document.createElement('button');
-  okBtn.className = 'modal-btn primary';
-  okBtn.textContent = '확인';
-  okBtn.onclick = saveDailyAtt;
-  actions.appendChild(okBtn);
-
-  openModal('dailyAttModal');
-}
-
-function saveDailyAtt() {
-  const startTime = document.getElementById('dailyStartTime').value;
-  const workHours = document.getElementById('dailyWorkHours').value;
-  const note = document.getElementById('dailyNote').value.trim();
-  DB.setEmpRecord(selectedDate, pendingDailyEmpId, { status: '출근', startTime, workHours: workHours ? Number(workHours) : null, note });
-  closeModal('dailyAttModal');
-  renderAttList();
-  renderCalendar();
 }
 
 // ===================== Employee Info Modal =====================
