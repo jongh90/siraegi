@@ -667,9 +667,17 @@ function setDailyStatus(empId, newStatus, currentRec) {
     });
     return;
   }
-  DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: newStatus });
-  renderAttList();
-  renderCalendar();
+  if (currentRec.status) {
+    showConfirm('출근 상태 변경', `${currentRec.status} → ${newStatus}로 변경하시겠나요?`, () => {
+      DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: newStatus });
+      renderAttList();
+      renderCalendar();
+    });
+  } else {
+    DB.setEmpRecord(selectedDate, empId, { ...currentRec, status: newStatus });
+    renderAttList();
+    renderCalendar();
+  }
 }
 
 // ===================== Note Modal =====================
